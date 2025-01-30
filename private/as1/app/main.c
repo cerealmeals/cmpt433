@@ -7,15 +7,22 @@
 #include <time.h>
 //#define DEBUG
 
+typedef enum {
+    Early = 0,
+    Exit,
+    Waited
+}WaitResult;
+
 static void MyNanoSleep(double time);
-static bool GetReady(void);
-static int Wait(void);
+static void GetReady(void);
+static WaitResult Wait(void);
 static bool Choose(void);
 static Direction JustCheckingJoystick(double time);
 static long long getTimeInMs(void);
 static void flash5time(LED_COLOUR);
 
 static int besttime = 5001;
+
 
 int main(){
 
@@ -29,27 +36,25 @@ int main(){
     LEDcontrol_init();
 
     // main loop
-    
     while(true){
-        bool stop = GetReady();
-        if(stop){
-            break;
-        }
+        GetReady();
         while (JoystickInterp() == UP || JoystickInterp() == DOWN){
             printf("Please let go of the joystick\n");
             MyNanoSleep(0.5);
         }
-        int check = Wait();
-        if(check == 1){
+        WaitResult check = Wait();
+        if(check == Exit){
             break;
         }
-        else if (check != 0){
-            stop = Choose();
+        else if (check == Waited){
+            bool stop = Choose();
             if(stop){
                 break;
             }
         }
     }
+
+    
     JoystickControl_close();
     printf("Thanks for playing\n");
     exit(EXIT_SUCCESS);
@@ -57,15 +62,14 @@ int main(){
 
 static void MyNanoSleep(double time)
 {
-    // Sleep 1.5 seconds
-    long seconds = (long)time;
-    double fraction = time - seconds;
-    long nanoseconds = (long)(fraction * 100000000);
-    struct timespec reqDelay = {seconds, nanoseconds};
+    struct timespec reqDelay;
+    reqDelay.tv_sec = (time_t)time;
+    double fraction = time - (double)reqDelay.tv_sec;
+    reqDelay.tv_nsec = (long)(fraction * 1e9);
     nanosleep(&reqDelay, (struct timespec *) NULL);
 }
 
-static bool GetReady(void)
+static void GetReady(void)
 {
     printf("get ready...\n");
 
@@ -75,24 +79,15 @@ static bool GetReady(void)
             printf("check 63\n");
         #endif
         LEDcontrol_on(GREEN);
-        Direction dir = JustCheckingJoystick(0.25);
-        if(dir == RIGHT || dir == LEFT){
-            printf("You pressed right or left. Exiting\n");
-            return true;
-        }
+        MyNanoSleep(0.25);
         LEDcontrol_off(GREEN);
         LEDcontrol_on(RED);
-        dir = JustCheckingJoystick(0.25);
-        if(dir == RIGHT || dir == LEFT){
-            printf("You pressed right or left. Exiting\n");
-            return true;
-        }
+        MyNanoSleep(0.25);
         LEDcontrol_off(RED);
     }
-    return false;
 }
 
-static int Wait(void)
+static  WaitResult Wait(void)
 {
     srand(time(NULL));
 
@@ -104,13 +99,13 @@ static int Wait(void)
     dir = JustCheckingJoystick((double)random_number/1000.0);
     if(dir == RIGHT || dir == LEFT){
         printf("You pressed right or left. Exiting\n");
-        return 1;
+        return Exit;
     }
     else if (dir == UP || dir == DOWN){
         printf("Too soon\n");
-        return 0;
+        return Early;
     }
-    return 2;
+    return Waited;
 }
 
 static bool Choose(void)
@@ -184,9 +179,9 @@ static void flash5time(LED_COLOUR colour)
     const int five = 5;
     for(int i = 0; i < five; i++){
         LEDcontrol_on(colour);
-        MyNanoSleep(0.4);
+        MyNanoSleep(0.1);
         LEDcontrol_off(colour);
-        MyNanoSleep(0.2);
+        MyNanoSleep(0.1);
     }
     
 }
