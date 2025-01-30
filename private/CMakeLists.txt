@@ -18,10 +18,13 @@ set(CMAKE_SYSTEM_PROCESSOR aarch64)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_COMPILER /usr/bin/aarch64-linux-gnu-gcc)
 add_compile_options(-Wall -Werror -Wpedantic -Wextra)
+include_directories(${CMAKE_SOURCE_DIR}/hal)
 add_executable( Reaction_Game
     ass1/app/main.c
     hal/JoystickControl.c
     hal/JoystickControl.h
     hal/LEDcontrol.h
     hal/LEDcontrol.c
+    ass1/app/JoystickInterp.c
+    ass1/app/JoystickInterp.h
 )
