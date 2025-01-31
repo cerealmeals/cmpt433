@@ -25,11 +25,14 @@
 #define TLA2024_CHANNEL_CONF_3 0x83F2	// ADC Header pin 2
 
 
+static int ChangeRange(uint16_t input, uint16_t max, uint16_t min);
 
-static const float multiplier = 1000.0/1635.0;
-static const float constant = 809500.0/1635.0;
-
-
+static uint16_t x_currentMax = 1600;
+static uint16_t x_currentMin = 10;
+static uint16_t y_currentMax = 1600;
+static uint16_t y_currentMin = 10;
+static int OutputMin = -500;
+static int OutputMax = 500;
 static bool initilized = false;
 static int i2c_file_desc;
 
@@ -46,22 +49,42 @@ void JoystickControl_GetJoystickOutput(JoystickOutput* output)
 		// Convert byte order and shift bits into place
 		uint16_t value = ((raw_read & 0xFF) << 8) | ((raw_read & 0xFF00) >> 8);
 		value  = value >> 4;
-		(*output).x_value = (int)(((float)value*multiplier) - constant);
-
+		if(value > x_currentMax){
+			x_currentMax = value;
+		}
+		else if(value < x_currentMin){
+			x_currentMin = value;
+		}
+		(*output).x_value = ChangeRange(value, x_currentMax, x_currentMin);
+	//printf("x_og: %d   x: %d\n", value, output->x_value);
 	// get y value
 		I2C_write_reg16(i2c_file_desc, REG_CONFIGURATION, TLA2024_CHANNEL_CONF_1);
 		raw_read = I2C_read_reg16(i2c_file_desc, REG_DATA);
 		// Convert byte order and shift bits into place
 		value = ((raw_read & 0xFF) << 8) | ((raw_read & 0xFF00) >> 8);
-		value  = value >> 4;
-		(*output).y_value = -(int)(((float)value*multiplier) - constant);
+		value  = value >> 4;if(value > y_currentMax){
+			y_currentMax = value;
+		}
+		else if(value < y_currentMin){
+			y_currentMin = value;
+		}
+		(*output).y_value = -ChangeRange(value, y_currentMax, y_currentMin);
     
 	// get push value
 		// ??
+
+	//printf("y_og: %d  y: %d\n", value, output->y_value);
 }
 
 void JoystickControl_close(void)
 {
 	close(i2c_file_desc);
 	initilized = false;
+}
+
+static int ChangeRange(uint16_t input, uint16_t max, uint16_t min)
+{
+	//printf("input: %d  max: %d   min: %d", input, max, min);
+	int to_return = ((int)input - (int)min) * (OutputMax - OutputMin) / ((int)max - (int)min) + OutputMin;
+	return to_return;
 }

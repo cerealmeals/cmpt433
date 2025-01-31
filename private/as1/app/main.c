@@ -14,7 +14,7 @@ typedef enum {
 }WaitResult;
 
 static void MyNanoSleep(double time);
-static void GetReady(void);
+static bool GetReady(void);
 static WaitResult Wait(void);
 static bool Choose(void);
 static Direction JustCheckingJoystick(double time);
@@ -37,7 +37,10 @@ int main(){
 
     // main loop
     while(true){
-        GetReady();
+        bool stop = GetReady();
+        if(stop){
+            break;
+        }
         while (JoystickInterp() == UP || JoystickInterp() == DOWN){
             printf("Please let go of the joystick\n");
             MyNanoSleep(0.5);
@@ -47,14 +50,15 @@ int main(){
             break;
         }
         else if (check == Waited){
-            bool stop = Choose();
+            stop = Choose();
             if(stop){
                 break;
             }
         }
     }
 
-    
+    LEDcontrol_off(GREEN);
+    LEDcontrol_off(RED);
     JoystickControl_close();
     printf("Thanks for playing\n");
     exit(EXIT_SUCCESS);
@@ -69,7 +73,8 @@ static void MyNanoSleep(double time)
     nanosleep(&reqDelay, (struct timespec *) NULL);
 }
 
-static void GetReady(void)
+//return true if ending the game
+static bool GetReady(void)
 {
     printf("get ready...\n");
 
@@ -79,12 +84,21 @@ static void GetReady(void)
             printf("check 63\n");
         #endif
         LEDcontrol_on(GREEN);
-        MyNanoSleep(0.25);
+        Direction dir = JustCheckingJoystick(0.25);
+        if(dir == RIGHT || dir == LEFT){
+            printf("You pressed right or left. Exiting\n");
+            return true;
+        }
         LEDcontrol_off(GREEN);
         LEDcontrol_on(RED);
-        MyNanoSleep(0.25);
+        dir = JustCheckingJoystick(0.25);
+        if(dir == RIGHT || dir == LEFT){
+            printf("You pressed right or left. Exiting\n");
+            return true;
+        }
         LEDcontrol_off(RED);
     }
+    return false;
 }
 
 static  WaitResult Wait(void)
@@ -95,8 +109,7 @@ static  WaitResult Wait(void)
     // but I typed it myself
     int random_number = (rand() % (3500 - 500 + 1)) + 500;
 
-    Direction dir;
-    dir = JustCheckingJoystick((double)random_number/1000.0);
+    Direction dir = JustCheckingJoystick((double)random_number/1000.0);
     if(dir == RIGHT || dir == LEFT){
         printf("You pressed right or left. Exiting\n");
         return Exit;
@@ -108,11 +121,13 @@ static  WaitResult Wait(void)
     return Waited;
 }
 
+//return true if ending the game
 static bool Choose(void)
 {
     long long start;
     int random_number = rand();
     Direction correctDirection;
+
     if (random_number > RAND_MAX/2){
         printf("UP\n");
         LEDcontrol_on(GREEN);
@@ -123,18 +138,22 @@ static bool Choose(void)
         LEDcontrol_on(RED);
         correctDirection = DOWN;
     }
+
+    // start time and wait for player to react
     start = getTimeInMs();
     Direction dir = JustCheckingJoystick(5.0);
+    int reactiontime = (int)(getTimeInMs() - start);
+
     LEDcontrol_off(GREEN);
     LEDcontrol_off(RED);
-    int time = (int)(getTimeInMs() - start);
+    
     if( dir == correctDirection){
 
-        if (besttime > time){
-            besttime = time;
+        if (besttime > reactiontime){
+            besttime = reactiontime;
             printf("You got a new best time! Congratulations\n");
         }
-        printf("You reacted in %dms. Your best time in this setting so far is %dms\n", time, besttime);
+        printf("You reacted in %dms. Your best time in this setting so far is %dms\n", reactiontime, besttime);
         flash5time(GREEN);
     }
     else if (dir == NONE){
@@ -148,6 +167,7 @@ static bool Choose(void)
     return false;
 }
 
+// return the direction of joystick while waiting
 static Direction JustCheckingJoystick(double time)
 {
     long long startTime = getTimeInMs();
@@ -179,9 +199,8 @@ static void flash5time(LED_COLOUR colour)
     const int five = 5;
     for(int i = 0; i < five; i++){
         LEDcontrol_on(colour);
-        MyNanoSleep(0.1);
+        MyNanoSleep(0.125);
         LEDcontrol_off(colour);
-        MyNanoSleep(0.1);
+        MyNanoSleep(0.075);
     }
-    
 }
