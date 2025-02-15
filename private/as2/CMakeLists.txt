@@ -4,7 +4,8 @@ cmake_minimum_required(VERSION 3.18)
 project(
 Assignment2
 VERSION 1.0
-DESCRIPTION "A game testing reactions using and led and I2C joystick"
+
+DESCRIPTION "light sensor and timing"
 LANGUAGES C
 )
 
@@ -24,5 +25,5 @@ add_link_options(-fsanitize=address)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ~/cmpt433/public)
 
 # Include subdirectories
-# add_subdirectory(hal)
+add_subdirectory(hal)
 add_subdirectory(app)

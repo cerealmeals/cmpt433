@@ -4,4 +4,3 @@
 # Include directories for the app
 include_directories(include)
 file(GLOB MY_SOURCES "src/*.c")
-add_executable(Assignment2 ${MY_SOURCES})

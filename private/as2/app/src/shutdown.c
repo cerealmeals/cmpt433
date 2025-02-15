@@ -10,6 +10,7 @@ static bool is_init = false;
 
 void shutdown_init(void)
 {
+    assert(!is_init);
     // Initialize the mutex
     pthread_mutex_init(&mutex, NULL);
     // Lock the mutex
