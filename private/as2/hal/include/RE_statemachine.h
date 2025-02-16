@@ -3,12 +3,12 @@
 
 #include <stdbool.h>
 
-void BtnStateMachine_init(void);
-void BtnStateMachine_cleanup(void);
+void RE_StateMachine_init(void);
+void RE_StateMachine_cleanup(void);
 
-int BtnStateMachine_getValue(void);
+int RE_StateMachine_getValue(void);
 
 // TODO: This should be on a background thread (internal?)
-void BtnStateMachine_doState();
+void RE_StateMachine_doState();
 
 #endif

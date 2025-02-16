@@ -19,6 +19,8 @@ static bool isInitialized = false;
 
 struct GpioLine* s_lineBtn = NULL;
 static atomic_int counter = 0;
+static atomic_bool track_CW = false;
+static atomic_bool track_CCW = false;
 
 /*
     Define the Statemachine Data Structures
@@ -38,37 +40,60 @@ struct state {
 /*
     START STATEMACHINE
 */
-static void on_release(void)
+static void start_CW(void)
 {
-    counter++;
+    track_CW = true;
+}
+
+static void start_CCW(void)
+{
+    track_CCW = true;
+}
+
+static void end_CW(void)
+{
+    track_CCW = false;
+    if (track_CW == true){
+        counter++;
+    }
+    track_CW = false;
+}
+
+static void end_CCW(void)
+{
+    track_CW = false;
+    if (track_CCW == true){
+        counter--;
+    }
+    track_CCW = false;
 }
 
 struct state states[] = {
     { // rest = 0
         .A_rising = {&states[0], NULL},
-        .A_falling = {&states[1], NULL},
-        .B_rising = (&states[2], NULL),
-        .B_falling = (&states[3], NULL),
+        .A_falling = {&states[1], start_CW},
+        .B_rising = (&states[0], NULL),
+        .B_falling = (&states[3], start_CCW),
     },
 
     { // 1
-        .A_rising = {&states[0], NULL},
+        .A_rising = {&states[0], end_CCW},
         .A_falling = {&states[1], NULL},
-        .B_rising = (&states[2], NULL),
-        .B_falling = (&states[3], NULL),
+        .B_rising = (&states[1], NULL),
+        .B_falling = (&states[2], NULL),
     },
 
     { // 2
-        .A_rising = {&states[0], NULL},
-        .A_falling = {&states[1], NULL},
-        .B_rising = (&states[2], NULL),
-        .B_falling = (&states[3], NULL),
+        .A_rising = {&states[3], NULL},
+        .A_falling = {&states[2], NULL},
+        .B_rising = (&states[1], NULL),
+        .B_falling = (&states[2], NULL),
     },
 
     { // 3
-        .A_rising = {&states[0], NULL},
-        .A_falling = {&states[1], NULL},
-        .B_rising = (&states[2], NULL),
+        .A_rising = {&states[3], NULL},
+        .A_falling = {&states[2], NULL},
+        .B_rising = (&states[0], end_CW),
         .B_falling = (&states[3], NULL),
     },
 };
@@ -80,26 +105,26 @@ struct state* pCurrentState = &states[0];
 
 
 
-void BtnStateMachine_init()
+void RE_StateMachine_init()
 {
     assert(!isInitialized);
     s_lineBtn = Gpio_openForEvents(GPIO_CHIP, GPIO_LINE_NUMBER);
     isInitialized = true;
 }
-void BtnStateMachine_cleanup()
+void RE_StateMachine_cleanup()
 {
     assert(isInitialized);
     isInitialized = false;
     Gpio_close(s_lineBtn);
 }
 
-int BtnStateMachine_getValue()
+int RE_StateMachine_getValue()
 {
     return counter;
 }
 
 // TODO: This should be on a background thread!
-void BtnStateMachine_doState()
+void RE_StateMachine_doState()
 {
     assert(isInitialized);
 
