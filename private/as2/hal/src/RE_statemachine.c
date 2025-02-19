@@ -11,8 +11,12 @@
 // Pin config info: GPIO 24 (Rotary Encoder PUSH)
 //   $ gpiofind GPIO24
 //   >> gpiochip0 10
-#define GPIO_CHIP          GPIO_CHIP_0
-#define GPIO_LINE_NUMBER   10
+#define GPIO_CHIP_BTN           GPIO_CHIP_0
+#define GPIO_LINE_NUMBER_BTN    10
+#define GPIO_CHIP_A             GPIO_CHIP_2
+#define GPIO_LINE_NUMBER_A      7
+#define GPIO_CHIP_B             GPIO_CHIP_2
+#define GPIO_LINE_NUMBER_B      8
 
 
 static bool isInitialized = false;
