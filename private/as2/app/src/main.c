@@ -1,5 +1,6 @@
 #include "shutdown.h"
 #include "network.h"
+#include "RotaryEncoder.h"
 #include <stdio.h>
 
 int main(){
@@ -7,6 +8,8 @@ int main(){
     // initialize everything
     shutdown_init();
     network_init();
+    RotaryEncoder_init();
+
 
     network_listener();
     printf("Main initialization done and is now waiting for shutdown\n");
@@ -16,6 +19,7 @@ int main(){
 
     printf("Main recevied shutdown\nCleaning up\n");
     // clean everyrthing up
+    RotaryEncoder_clean();
     network_clean();
     shutdown_clean();
 

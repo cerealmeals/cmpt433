@@ -27,3 +27,4 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ~/cmpt433/public)
 # Include subdirectories
 add_subdirectory(hal)
 add_subdirectory(app)
+

@@ -9,6 +9,6 @@ void RE_StateMachine_cleanup(void);
 int RE_StateMachine_getValue(void);
 
 // TODO: This should be on a background thread (internal?)
-void RE_StateMachine_doState();
+int RE_StateMachine_doState(StateMachineCallback callback);
 
 #endif

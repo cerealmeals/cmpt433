@@ -61,6 +61,7 @@ void network_clean(void)
     assert(is_init == true);
     // make sure the thread ended
     pthread_join(thread, NULL);
+	
     // Close
 	close(socketDescriptor);
     is_init = false;

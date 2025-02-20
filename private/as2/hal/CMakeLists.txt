@@ -3,4 +3,7 @@
 
 # Include directories for the app
 include_directories(include)
-file(GLOB MY_SOURCES "src/*.c")
+file(GLOB HAL_SOURCES "src/*.c")
+
+# Create a library from HAL sources
+add_library(hal_lib ${HAL_SOURCES})

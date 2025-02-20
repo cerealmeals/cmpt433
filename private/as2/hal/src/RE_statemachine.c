@@ -1,30 +1,39 @@
 // Sample state machine for one GPIO pin.
 
-#include "btn_statemachine.h"
 #include "gpio.h"
 
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdatomic.h>
+#include <pthread.h>
+#include <signal.h>
 
 // Pin config info: GPIO 24 (Rotary Encoder PUSH)
 //   $ gpiofind GPIO24
 //   >> gpiochip0 10
-#define GPIO_CHIP_BTN           GPIO_CHIP_0
-#define GPIO_LINE_NUMBER_BTN    10
+// #define GPIO_CHIP_BTN           GPIO_CHIP_0
+// #define GPIO_LINE_NUMBER_BTN    10
+
 #define GPIO_CHIP_A             GPIO_CHIP_2
 #define GPIO_LINE_NUMBER_A      7
 #define GPIO_CHIP_B             GPIO_CHIP_2
 #define GPIO_LINE_NUMBER_B      8
 
+#define NUMLINES 2
+
 
 static bool isInitialized = false;
 
-struct GpioLine* s_lineBtn = NULL;
+
+struct GpioLine* lines[NUMLINES] = {NULL, NULL};
+
 static atomic_int counter = 0;
 static atomic_bool track_CW = false;
 static atomic_bool track_CCW = false;
+static pthread_t thread;
+
+static atomic_int shutdown_requested = 0;
 
 /*
     Define the Statemachine Data Structures
@@ -76,29 +85,29 @@ struct state states[] = {
     { // rest = 0
         .A_rising = {&states[0], NULL},
         .A_falling = {&states[1], start_CW},
-        .B_rising = (&states[0], NULL),
-        .B_falling = (&states[3], start_CCW),
+        .B_rising = {&states[0], NULL},
+        .B_falling = {&states[3], start_CCW},
     },
 
     { // 1
         .A_rising = {&states[0], end_CCW},
         .A_falling = {&states[1], NULL},
-        .B_rising = (&states[1], NULL),
-        .B_falling = (&states[2], NULL),
+        .B_rising = {&states[1], NULL},
+        .B_falling = {&states[2], NULL},
     },
 
     { // 2
         .A_rising = {&states[3], NULL},
         .A_falling = {&states[2], NULL},
-        .B_rising = (&states[1], NULL),
-        .B_falling = (&states[2], NULL),
+        .B_rising = {&states[1], NULL},
+        .B_falling = {&states[2], NULL},
     },
 
     { // 3
         .A_rising = {&states[3], NULL},
         .A_falling = {&states[2], NULL},
-        .B_rising = (&states[0], end_CW),
-        .B_falling = (&states[3], NULL),
+        .B_rising = {&states[0], end_CW},
+        .B_falling = {&states[3], NULL},
     },
 };
 /*
@@ -107,19 +116,31 @@ struct state states[] = {
 
 struct state* pCurrentState = &states[0];
 
+// Define a function pointer type for the callback
+typedef void (*StateMachineCallback)(int counter);
+
+typedef struct {
+    StateMachineCallback callback;
+} ThreadData;
 
 
 void RE_StateMachine_init()
 {
     assert(!isInitialized);
-    s_lineBtn = Gpio_openForEvents(GPIO_CHIP, GPIO_LINE_NUMBER);
+    lines[0] = Gpio_openForEvents(GPIO_CHIP_A, GPIO_LINE_NUMBER_A);
+    lines[1] = Gpio_openForEvents(GPIO_CHIP_B, GPIO_LINE_NUMBER_B);
     isInitialized = true;
 }
 void RE_StateMachine_cleanup()
 {
     assert(isInitialized);
+    
+    pthread_kill(thread, SIGUSR1);
+    pthread_join(thread, NULL);
+    Gpio_close(lines[0]);
+    Gpio_close(lines[1]);
+
     isInitialized = false;
-    Gpio_close(s_lineBtn);
 }
 
 int RE_StateMachine_getValue()
@@ -127,15 +148,53 @@ int RE_StateMachine_getValue()
     return counter;
 }
 
-// TODO: This should be on a background thread!
-void RE_StateMachine_doState()
+static void * thread_function(void* arg);
+
+int RE_StateMachine_doState(StateMachineCallback callback)
 {
     assert(isInitialized);
 
-    //printf("\n\nWaiting for an event...\n");
-    // while (true) {
+    // Create an instance of ThreadData
+    ThreadData* threadData = (ThreadData*)malloc(sizeof(ThreadData));
+    if (threadData == NULL) {
+        perror("Failed to allocate memory for thread data\n");
+        return 1;
+    }
+
+    threadData->callback = callback;
+
+    // Create thread and pass the callback
+    if (pthread_create(&thread, NULL, thread_function, (void*)threadData) != 0) {
+        perror("Failed to create thread\n");
+        return 1;
+    }
+    return 0;
+}
+
+void signal_handler(int sig) {
+    if (sig == SIGUSR1) {
+        shutdown_requested = 1;
+    }
+}
+
+static void * thread_function(void* arg)
+{
+    if(arg == NULL){
+        perror("Arg should be something");
+        return NULL;
+    }
+
+    ThreadData* data = (ThreadData*)arg;
+
+    // Cast the argument back to the function pointer type
+    StateMachineCallback callback = data->callback;
+    free(data);
+
+    signal(SIGUSR1, signal_handler);
+
+    while (!shutdown_requested) {
         struct gpiod_line_bulk bulkEvents;
-        int numEvents = Gpio_waitForLineChange(s_lineBtn, &bulkEvents);
+        int numEvents = Gpio_waitForLineChange(lines, NUMLINES, &bulkEvents);
 
         // Iterate over the event
         for (int i = 0; i < numEvents; i++)
@@ -158,21 +217,31 @@ void RE_StateMachine_doState()
             bool isRising = event.event_type == GPIOD_LINE_EVENT_RISING_EDGE;
 
             // Can check with line it is, if you have more than one...
-            bool isBtn = this_line_number == GPIO_LINE_NUMBER;
-            assert (isBtn);
-
+            bool line_A = this_line_number == GPIO_LINE_NUMBER_A;
             struct stateEvent* pStateEvent = NULL;
-            if (isRising) {
-                pStateEvent = &pCurrentState->rising;
-            } else {
-                pStateEvent = &pCurrentState->falling;
-            } 
-
+            if (line_A)
+            {
+                if (isRising) {
+                    pStateEvent = &pCurrentState->A_rising;
+                } else {
+                    pStateEvent = &pCurrentState->A_falling;
+                } 
+            }
+            else{
+                if (isRising) {
+                    pStateEvent = &pCurrentState->B_rising;
+                } else {
+                    pStateEvent = &pCurrentState->B_falling;
+                }
+            }
+            
             // Do the action
             if (pStateEvent->action != NULL) {
                 pStateEvent->action();
             }
             pCurrentState = pStateEvent->pNextState;
+
+            
 
             // DEBUG INFO ABOUT STATEMACHINE
             #if 0
@@ -186,7 +255,11 @@ void RE_StateMachine_doState()
                 newState,
                 time);
             #endif
-        }
-    // }
 
+
+            // run given function with counter
+            callback(counter);
+        }
+    }
+    return NULL;
 }
