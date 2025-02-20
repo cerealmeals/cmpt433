@@ -2,7 +2,7 @@
 #define ROTARYENCODER_H
 
 void RotaryEncoder_init(void);
-void RotaryEncoder_handleChange(int counter)
-void RotaryEncoder_clean(void);
+void RotaryEncoder_handleChange(int counter);
+void RotaryEncoder_cleanup(void);
 
 #endif

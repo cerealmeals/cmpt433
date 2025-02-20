@@ -4,7 +4,8 @@
 
 typedef enum {
     RED = 0,
-    GREEN
+    GREEN, 
+    NUM_COLOURS
 } LED_COLOUR;
 
 

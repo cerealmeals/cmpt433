@@ -3,6 +3,6 @@
 void shutdown_init(void);
 void shutdown_shutdown(void);
 void shutdown_waitForShutdown(void);
-void shutdown_clean(void);
+void shutdown_cleanup(void);
 
 #endif

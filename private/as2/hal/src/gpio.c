@@ -104,7 +104,7 @@ int Gpio_waitForLineChange(
     int result = gpiod_line_event_wait_bulk(&bulkWait, NULL, bulkEvents);
     if ( result == -1) {
         perror("Error waiting on lines for event waiting");
-        exit(EXIT_FAILURE);
+        return (int)-1;
     }
 
     int numEvents = gpiod_line_bulk_num_lines(bulkEvents);

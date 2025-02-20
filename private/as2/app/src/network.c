@@ -56,7 +56,7 @@ int network_listener(void)
     return 0;
 }
 
-void network_clean(void)
+void network_cleanup(void)
 {
     assert(is_init == true);
     // make sure the thread ended
@@ -72,6 +72,7 @@ static void * thread_function(void* arg)
     if (arg != NULL){
         return NULL;
     }
+	char previousMessage[MSG_MAX_LEN] = {"\0"};
     while (1) {
 		// Get the data (blocking)
 		// Will change sin (the address) to be the address of the client.
@@ -105,11 +106,11 @@ static void * thread_function(void* arg)
 		// Compose the reply message:
 		// (NOTE: watch for buffer overflows!).
 		char messageTx[MSG_MAX_LEN];
-		char previousMessage[MSG_MAX_LEN] = {"\0"};
+		
 		
 		// save the command
-		if (strncmp(messageRx, "\n", strlen("\n")) == 0){
-			snprintf(messageTx, sizeof(char)* MSG_MAX_LEN, previousMessage);
+		if (strncmp(messageRx, "\n", strlen("\n")) == 0 || strncmp(messageRx, "\r\n", strlen("\r\n")) == 0){
+			snprintf(messageRx, sizeof(char)* MSG_MAX_LEN, previousMessage);
 		}
 		else{
 			snprintf(previousMessage, sizeof(char)* MSG_MAX_LEN, messageRx);

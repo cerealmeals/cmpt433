@@ -19,9 +19,9 @@ int main(){
 
     printf("Main recevied shutdown\nCleaning up\n");
     // clean everyrthing up
-    RotaryEncoder_clean();
-    network_clean();
-    shutdown_clean();
+    RotaryEncoder_cleanup();
+    network_cleanup();
+    shutdown_cleanup();
 
     printf("Main finished cleaning up\n");
 

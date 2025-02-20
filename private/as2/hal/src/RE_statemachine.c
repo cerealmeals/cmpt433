@@ -2,6 +2,7 @@
 
 #include "gpio.h"
 
+#include"RE_statemachine.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -34,6 +35,8 @@ static atomic_bool track_CCW = false;
 static pthread_t thread;
 
 static atomic_int shutdown_requested = 0;
+
+static void * thread_function(void* arg);
 
 /*
     Define the Statemachine Data Structures
@@ -116,8 +119,7 @@ struct state states[] = {
 
 struct state* pCurrentState = &states[0];
 
-// Define a function pointer type for the callback
-typedef void (*StateMachineCallback)(int counter);
+
 
 typedef struct {
     StateMachineCallback callback;
@@ -148,8 +150,6 @@ int RE_StateMachine_getValue()
     return counter;
 }
 
-static void * thread_function(void* arg);
-
 int RE_StateMachine_doState(StateMachineCallback callback)
 {
     assert(isInitialized);
@@ -171,7 +171,7 @@ int RE_StateMachine_doState(StateMachineCallback callback)
     return 0;
 }
 
-void signal_handler(int sig) {
+static void signal_handler(int sig) {
     if (sig == SIGUSR1) {
         shutdown_requested = 1;
     }

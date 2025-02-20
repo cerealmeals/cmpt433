@@ -32,7 +32,7 @@ void shutdown_waitForShutdown(void)
     pthread_mutex_lock(&mutex);
 }
 
-void shutdown_clean(void)
+void shutdown_cleanup(void)
 {
     assert(is_init == true);
     // Destroy the mutex
