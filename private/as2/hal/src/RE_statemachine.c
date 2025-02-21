@@ -34,7 +34,7 @@ static atomic_bool track_CW = false;
 static atomic_bool track_CCW = false;
 static pthread_t thread;
 
-static atomic_int shutdown_requested = 0;
+static volatile sig_atomic_t shutdown_requested = 0;
 
 static void * thread_function(void* arg);
 
