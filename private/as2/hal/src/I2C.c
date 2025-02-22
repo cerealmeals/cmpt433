@@ -7,12 +7,16 @@
 #include <linux/i2c.h>
 #include <linux/i2c-dev.h>
 #include <stdbool.h>
+#include <assert.h>
 
 // code originally from https://opencoursehub.cs.sfu.ca/bfraser/solutions/433/guide-code/i2c_adc_tla2024/tla2024_demo.c
 //edited by Sam
 
+static bool is_init = false;
+
 int I2C_init_bus(char* bus, int address)
 {
+	assert(!is_init);
 	int i2c_file_desc = open(bus, O_RDWR);
 	if (i2c_file_desc == -1) {
 		printf("I2C DRV: Unable to open bus for read/write (%s)\n", bus);
@@ -24,12 +28,13 @@ int I2C_init_bus(char* bus, int address)
 		perror("Unable to set I2C device to slave address.");
 		exit(EXIT_FAILURE);
 	}
-	
+	is_init = true;
 	return i2c_file_desc;
 }
 
 void I2C_write_reg16(int i2c_file_desc, uint8_t reg_addr, uint16_t value)
 {
+	assert(is_init);
 	int tx_size = 1 + sizeof(value);
 	uint8_t buff[tx_size];
 	buff[0] = reg_addr;
@@ -44,6 +49,7 @@ void I2C_write_reg16(int i2c_file_desc, uint8_t reg_addr, uint16_t value)
 
 uint16_t I2C_read_reg16(int i2c_file_desc, uint8_t reg_addr)
 {
+	assert(is_init);
 	// To read a register, must first write the address
 	int bytes_written = write(i2c_file_desc, &reg_addr, sizeof(reg_addr));
 	if (bytes_written != sizeof(reg_addr)) {
@@ -59,4 +65,10 @@ uint16_t I2C_read_reg16(int i2c_file_desc, uint8_t reg_addr)
 		exit(EXIT_FAILURE);
 	}
 	return value;
+}
+	
+void I2C_cleanup(void)
+{
+	assert(is_init);
+	is_init = false;
 }

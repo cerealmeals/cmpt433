@@ -137,8 +137,14 @@ void RE_StateMachine_cleanup()
 {
     assert(isInitialized);
     
-    pthread_kill(thread, SIGUSR1);
-    pthread_join(thread, NULL);
+    if (pthread_kill(thread, SIGUSR2) != 0) {
+        perror("pthread_kill failed");
+    }
+    
+    if (pthread_join(thread, NULL) != 0) {
+        perror("pthread_join failed");
+        exit(EXIT_FAILURE);
+    }
     Gpio_close(lines[0]);
     Gpio_close(lines[1]);
 
@@ -171,8 +177,9 @@ int RE_StateMachine_doState(StateMachineCallback callback)
     return 0;
 }
 
-static void signal_handler(int sig) {
-    if (sig == SIGUSR1) {
+static void State_signal_handler(int sig) {
+    if (sig == SIGUSR2) {
+        printf("Received SIGUSR1 in State Machine, shutting down...\n");
         shutdown_requested = 1;
     }
 }
@@ -190,7 +197,7 @@ static void * thread_function(void* arg)
     StateMachineCallback callback = data->callback;
     free(data);
 
-    signal(SIGUSR1, signal_handler);
+    signal(SIGUSR2, State_signal_handler);
 
     while (!shutdown_requested) {
         struct gpiod_line_bulk bulkEvents;

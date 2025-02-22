@@ -37,18 +37,19 @@ void lightSensor_init(void)
 
 int lightSensor_read(void)
 {
+    assert(is_init);
     I2C_write_reg16(i2c_file_desc, REG_CONFIGURATION, TLA2024_CHANNEL_CONF_2);
     uint16_t raw_read = I2C_read_reg16(i2c_file_desc, REG_DATA);
     // Convert byte order and shift bits into place
     uint16_t value = ((raw_read & 0xFF) << 8) | ((raw_read & 0xFF00) >> 8);
     value  = value >> 4;
     return (int)value;
-    assert(is_init);
 }
 
 void lightSensor_cleanup(void)
 {
     assert(is_init);
     close(i2c_file_desc);
+    I2C_cleanup();
     is_init = false;
 }
