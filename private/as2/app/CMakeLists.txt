@@ -11,4 +11,6 @@ target_include_directories(light_sampler PRIVATE
 
 # Link against the HAL library
 target_link_libraries(light_sampler PRIVATE hal_lib)
+target_link_libraries(light_sampler LINK_PRIVATE lcd)
+target_link_libraries(light_sampler LINK_PRIVATE lgpio)
 

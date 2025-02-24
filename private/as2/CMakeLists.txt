@@ -37,6 +37,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ~/cmpt433/public)
 # Include subdirectories
 add_subdirectory(hal)
 add_subdirectory(app)
+add_subdirectory(lgpio)
+add_subdirectory(lcd)
 
 # Link libgpiod to the HAL library and the main executable
 target_link_libraries(hal_lib PRIVATE ${GPIOD_LIBRARIES})
