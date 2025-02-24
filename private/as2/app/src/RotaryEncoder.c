@@ -26,15 +26,19 @@ void RotaryEncoder_handleChange(int counter)
 {
     if(last_count > counter && volume < max){
         volume++;
-        printf("New volume: %d \n", volume);
+        //printf("New volume: %d \n", volume);
         LED_Emitter_setTimesPerSecond(volume, GPIO12);
     }
     else if(last_count < counter && volume > min){
         volume--;
-        printf("New volume: %d \n", volume);
+        //printf("New volume: %d \n", volume);
         LED_Emitter_setTimesPerSecond(volume, GPIO12);
     }
     last_count = counter;
+}
+int RotartEncoder_currentVolume(void)
+{
+    return volume;
 }
 
 void RotaryEncoder_cleanup(void)

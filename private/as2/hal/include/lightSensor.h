@@ -3,7 +3,7 @@
 
 
 void lightSensor_init(void);
-int lightSensor_read(void);
+double lightSensor_read(void);
 void lightSensor_cleanup(void);
 
 #endif

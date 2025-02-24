@@ -26,6 +26,7 @@
 
 static bool is_init = false;
 static int i2c_file_desc;
+static const double modifier = 1000;
 
 void lightSensor_init(void)
 {
@@ -35,7 +36,7 @@ void lightSensor_init(void)
     is_init = true;
 }
 
-int lightSensor_read(void)
+double lightSensor_read(void)
 {
     assert(is_init);
     I2C_write_reg16(i2c_file_desc, REG_CONFIGURATION, TLA2024_CHANNEL_CONF_2);
@@ -43,7 +44,7 @@ int lightSensor_read(void)
     // Convert byte order and shift bits into place
     uint16_t value = ((raw_read & 0xFF) << 8) | ((raw_read & 0xFF00) >> 8);
     value  = value >> 4;
-    return (int)value;
+    return (double)value / modifier;
 }
 
 void lightSensor_cleanup(void)

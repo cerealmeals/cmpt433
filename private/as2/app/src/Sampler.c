@@ -1,6 +1,8 @@
 #include "Sampler.h"
 #include "lightSensor.h"
 #include "pthread.h"
+#include "periodTimer.h"
+#include "RotaryEncoder.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,10 +10,11 @@
 #include <signal.h>
 #include <time.h>
 #include <stdbool.h>
+#define NUMBER_OF_SAMPLES_IN_OUTPUT 10
 
 static double average;
 static bool average_init = false;
-static double smoothing = 0.999;
+static const double smoothing = 0.999;
 static long long totalCount = 0;
 static int current_size = 0;
 static int history_size = 0;
@@ -19,8 +22,16 @@ static int buffer_size = 500;
 static double * history;
 static double * current_data;
 
+static int current_dips = 0;
+static int history_dips = 0;
+static bool currently_dipped = false;
+static double last_sample = 0;
+static const double hysteresis = 0.03;
+static const double check_for_dip = 0.1;
+
 static pthread_t thread;
 static volatile sig_atomic_t shutdown_requested = 0;
+static pthread_mutex_t history_mutex;
 static bool is_init = false;
 
 static void * thread_function(void* arg);
@@ -29,6 +40,8 @@ void Sampler_init(void)
 {
     assert(!is_init);
     lightSensor_init();
+    Period_init();
+    pthread_mutex_init(&history_mutex, NULL);
     if (pthread_create(&thread, NULL, thread_function, NULL) != 0) {
         perror("Failed to create thread\n");
         exit(EXIT_FAILURE);
@@ -74,6 +87,8 @@ void Sampler_cleanup(void)
         free(current_data);
         current_data = NULL; // Avoid dangling pointer
     }
+    pthread_mutex_destroy(&history_mutex);
+    Period_cleanup();
     lightSensor_cleanup();
     is_init = false;
 }
@@ -83,13 +98,27 @@ void Sampler_moveCurrentDataToHistory(void)
     assert(is_init);
     assert(current_size <= buffer_size);
 
+    pthread_mutex_lock(&history_mutex);
     for(int i = 0; i < current_size; i++){
         history[i] = current_data[i];
     }
-    
+    pthread_mutex_unlock(&history_mutex);
     history_size = current_size;
     current_size = 0;
-    printf("History size: %d\n", history_size);
+    history_dips = current_dips;
+    current_dips = 0;
+
+    Period_statistics_t stats;
+    int flashs = RotartEncoder_currentVolume();
+    Period_getStatisticsAndClear(PERIOD_EVENT_SAMPLE_LIGHT, &stats);
+    printf("#Smpl/s = %d Flash @ %dHz avg = %.3fV dips = %d Smpl ms[ %.3f, %.3f] avg %.3f/%d\n",
+        history_size, flashs, average, history_dips, stats.minPeriodInMs, stats.maxPeriodInMs, stats.avgPeriodInMs, stats.numSamples);
+    
+    int offset = history_size / NUMBER_OF_SAMPLES_IN_OUTPUT;
+    for(int i = 0; i < NUMBER_OF_SAMPLES_IN_OUTPUT; i++){
+        printf(" %d:%.3f", i, history[i*offset]);
+    }
+    printf("\n");
 }
 
 int Sampler_getHistorySize(void)
@@ -111,9 +140,11 @@ double* Sampler_getHistory(int *size)
         return_size = history_size; 
     }
 
+    pthread_mutex_lock(&history_mutex);
     for(int i = 0; i < return_size; i++){
         ret[i] = history[i];
     }
+    pthread_mutex_unlock(&history_mutex);
     return ret;
 }
 
@@ -130,6 +161,11 @@ long long Sampler_getNumSamplesTaken(void)
     assert(is_init);
 
     return totalCount;
+}
+
+int Sampler_getdips(void)
+{
+    return history_dips;
 }
 
 static void Sampler_signal_handler(int sig) {
@@ -160,20 +196,37 @@ static void * thread_function(void* arg)
     signal(SIGUSR1, Sampler_signal_handler);
 
     struct timespec last_time, current_time;
-    int sample;
+    double sample;
     clock_gettime(CLOCK_MONOTONIC, &last_time);
 
     while(!shutdown_requested){
 
+        Period_markEvent(PERIOD_EVENT_SAMPLE_LIGHT);
         sample = lightSensor_read();
+
+        // check for dip
+        if (!currently_dipped && sample < (average - check_for_dip)){
+            currently_dipped = true;
+            current_dips++;
+        }
+        else if(currently_dipped && sample > (last_sample + hysteresis)){
+            currently_dipped = false;
+        }
+
+        last_sample = sample;
+
+        // calculate average
         if (average_init == false){
-            average = (double)sample;
+            average = sample;
+            average_init = true;
         }
         else{
-            average = (smoothing * average) + ((1.0 - smoothing) * (double)sample);
+            average = (smoothing * average) + ((1.0 - smoothing) * sample);
         }
-        totalCount++;
 
+
+        
+        // make sure arrays won't overflow
         if(current_size + 1 > buffer_size){
             buffer_size *=2;
         
@@ -191,9 +244,11 @@ static void * thread_function(void* arg)
             history = new_history;
         }
 
-        current_data[current_size] = (double)sample;
+        // track current data
+        current_data[current_size] = sample;
         current_size++;
-
+        totalCount++;
+        
         clock_gettime(CLOCK_MONOTONIC, &current_time);
         double elapsed = (current_time.tv_sec - last_time.tv_sec) +
                          (current_time.tv_nsec - last_time.tv_nsec) / 1e9;

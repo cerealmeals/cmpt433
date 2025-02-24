@@ -1,5 +1,6 @@
 #include "network.h"
 #include "shutdown.h"
+#include "Sampler.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <netdb.h>
@@ -118,7 +119,7 @@ static void * thread_function(void* arg)
 		
 		if (strncmp(messageRx, "help", strlen("help")) == 0) {
 			
-			sprintf(messageTx, "Accepted command examples:\n" 
+			snprintf(messageTx, MSG_MAX_LEN, "Accepted command examples:\n" 
 				"%-10s %s\n"
 				"%-10s %s\n"
 				"%-10s %s\n"
@@ -141,7 +142,7 @@ static void * thread_function(void* arg)
 		}
 		else if (strncmp(messageRx, "?", strlen("?")) == 0) {
 			
-			sprintf(messageTx, "Accepted command examples:\n"
+			snprintf(messageTx, MSG_MAX_LEN, "Accepted command examples:\n"
 				"%-10s %s\n" 
 				"%-10s %s\n"
 				"%-10s %s\n"
@@ -163,8 +164,9 @@ static void * thread_function(void* arg)
 			(struct sockaddr *) &sinRemote, sin_len);
 		}
 		else if (strncmp(messageRx, "count", strlen("count")) == 0) {
-			
-			sprintf(messageTx, "count\n");
+
+			long long int count = Sampler_getNumSamplesTaken();
+			snprintf(messageTx, MSG_MAX_LEN, "samples taken total: %lld\n", count);
 			// Transmit a reply:
 			sin_len = sizeof(sinRemote);
 			sendto( socketDescriptor,
@@ -174,7 +176,8 @@ static void * thread_function(void* arg)
 		}
 		else if (strncmp(messageRx, "length", strlen("length")) == 0) {
 			
-			sprintf(messageTx, "length\n");
+			int length = Sampler_getHistorySize();
+			snprintf(messageTx, MSG_MAX_LEN, "samples taken in the last second: %d\n", length);
 			// Transmit a reply:
 			sin_len = sizeof(sinRemote);
 			sendto( socketDescriptor,
@@ -184,7 +187,8 @@ static void * thread_function(void* arg)
 		}
 		else if (strncmp(messageRx, "dips", strlen("dips")) == 0) {
 			
-			sprintf(messageTx, "dips\n");
+			int dips = Sampler_getdips();
+			snprintf(messageTx, MSG_MAX_LEN, "Dips: %d\n", dips);
 			// Transmit a reply:
 			sin_len = sizeof(sinRemote);
 			sendto( socketDescriptor,
@@ -194,18 +198,33 @@ static void * thread_function(void* arg)
 		}
 		else if (strncmp(messageRx, "history", strlen("history")) == 0) {
 			
-			sprintf(messageTx, "history\n");
-			// Transmit a reply:
-			sin_len = sizeof(sinRemote);
-			sendto( socketDescriptor,
-			messageTx, strlen(messageTx),
-			0,
-			(struct sockaddr *) &sinRemote, sin_len);
+			int length = Sampler_getHistorySize();
+			double * history = Sampler_getHistory(&length);
+
+			int offset = 0;
+			// Iterate through the history array in chunks of 10
+			for (int i = 0; i < length; i++) {
+				// Append the current value to the message
+				offset += snprintf(messageTx + offset, MSG_MAX_LEN - offset, "%.3f, ", history[i]);
+				
+				// If we've processed 10 values or reached the end of the array, send the chunk
+				if ((i + 1) % 10 == 0 || i == length - 1) {
+					// Add a newline at the end of the chunk
+					offset += snprintf(messageTx + offset, MSG_MAX_LEN - offset, "\n");
+					
+					// Transmit the current chunk of the history
+					sin_len = sizeof(sinRemote);
+					sendto(socketDescriptor, messageTx, offset, 0, (struct sockaddr *) &sinRemote, sin_len);
+					
+					// Reset the offset for the next chunk
+					offset = 0;
+				}
+			}
 		}
 		else if (strncmp(messageRx, "stop", strlen("stop")) == 0) {
 			printf("Program terminating.\n");
 
-			sprintf(messageTx, "Program terminating.\n");
+			snprintf(messageTx, MSG_MAX_LEN, "Program terminating.\n");
 			// Transmit a reply:
 			sin_len = sizeof(sinRemote);
 			sendto( socketDescriptor,
@@ -217,7 +236,7 @@ static void * thread_function(void* arg)
 			break;
 		}
 		else{
-			sprintf(messageTx, "Unkown Command\n");
+			snprintf(messageTx, MSG_MAX_LEN, "Unkown Command\n");
 			// Transmit a reply:
 			sin_len = sizeof(sinRemote);
 			sendto( socketDescriptor,
