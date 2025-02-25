@@ -1,4 +1,4 @@
-#include "draw_stuff.h"
+#include "UseLCD.h"
 
 #include "DEV_Config.h"
 #include "LCD_1in54.h"
@@ -14,7 +14,7 @@
 static UWORD *s_fb;
 static bool isInitialized = false;
 
-void DrawStuff_init()
+void UseLCD_init()
 {
     assert(!isInitialized);
 
@@ -40,10 +40,11 @@ void DrawStuff_init()
     }
     isInitialized = true;
 }
-void DrawStuff_cleanup()
+void UseLCD_cleanup()
 {
     assert(isInitialized);
-
+    LCD_1IN54_Clear(WHITE);
+    LCD_SetBacklight(0);
     // Module Exit
     free(s_fb);
     s_fb = NULL;
@@ -51,29 +52,43 @@ void DrawStuff_cleanup()
     isInitialized = false;
 }
 
-void DrawStuff_updateScreen(char* message)
+void UseLCD_updateScreen(char* message)
 {
     assert(isInitialized);
-
+    
+    const int y_start = 70;
     const int x = 5;
-    const int y = 70;
+    int y = y_start;
+    const int lineHeight = 28; // Height of each line (adjust based on font size)
 
     // Initialize the RAM frame buffer to be blank (white)
     Paint_NewImage(s_fb, LCD_1IN54_WIDTH, LCD_1IN54_HEIGHT, 0, WHITE, 16);
     Paint_Clear(WHITE);
 
+    char* line = strtok(message, "\n");
+    while (line != NULL) {
+        // Draw the current line
+        Paint_DrawString_EN(x, y, line, &Font24, WHITE, BLACK);
+
+        // Move the y position down for the next line
+        y += lineHeight;
+
+        // Get the next line
+        line = strtok(NULL, "\n");
+    }
+
     // Draw into the RAM frame buffer
     // WARNING: Don't print strings with `\n`; will crash!
-    Paint_DrawString_EN(x, y, message, &Font16, WHITE, BLACK);
+    // Paint_DrawString_EN(x, y, message, &Font24, WHITE, BLACK);
 
     // Send the RAM frame buffer to the LCD (actually display it)
     // Option 1) Full screen refresh (~1 update / second)
     // LCD_1IN54_Display(s_fb);
     // Option 2) Update just a small window (~15 updates / second)
     //           Assume font height <= 20
-    LCD_1IN54_DisplayWindows(x, y, LCD_1IN54_WIDTH, y+20, s_fb);
-	
-    #if 0
+    LCD_1IN54_DisplayWindows(x, y_start, LCD_1IN54_WIDTH, y, s_fb);
+	#if 0
+    
     // Some other things you can do!
 
     // /*1.Create a new image cache named IMAGE_RGB and fill it with white*/

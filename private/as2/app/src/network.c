@@ -20,7 +20,7 @@ static void * thread_function(void* arg);
 // Address
 static struct sockaddr_in sin;
 static int socketDescriptor;
-static pthread_t thread;
+static pthread_t netword_thread;
 static bool is_init = false;
 
 void network_init(void)
@@ -45,23 +45,20 @@ void network_init(void)
         perror("Error binding the socket");
     }
 
+	if (pthread_create(&netword_thread, NULL, thread_function, NULL) != 0){
+        perror("Failed to create thread in network_listener\n");
+        exit(EXIT_FAILURE);
+    }
+    
     is_init = true;
 }
-int network_listener(void)
-{
-    assert(is_init == true);
-    if (pthread_create(&thread, NULL, thread_function, NULL) != 0){
-        perror("Failed to create thread in network_listener\n");
-        return 1;
-    }
-    return 0;
-}
+
 
 void network_cleanup(void)
 {
     assert(is_init == true);
     // make sure the thread ended
-    pthread_join(thread, NULL);
+    pthread_join(netword_thread, NULL);
 	
     // Close
 	close(socketDescriptor);
@@ -220,6 +217,7 @@ static void * thread_function(void* arg)
 					offset = 0;
 				}
 			}
+			free(history);
 		}
 		else if (strncmp(messageRx, "stop", strlen("stop")) == 0) {
 			printf("Program terminating.\n");

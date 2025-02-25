@@ -10,7 +10,7 @@
 #include <signal.h>
 #include <time.h>
 #include <stdbool.h>
-#define NUMBER_OF_SAMPLES_IN_OUTPUT 10
+
 
 static double average;
 static bool average_init = false;
@@ -29,7 +29,7 @@ static double last_sample = 0;
 static const double hysteresis = 0.03;
 static const double check_for_dip = 0.1;
 
-static pthread_t thread;
+static pthread_t sampler_thread;
 static volatile sig_atomic_t shutdown_requested = 0;
 static pthread_mutex_t history_mutex;
 static bool is_init = false;
@@ -42,7 +42,7 @@ void Sampler_init(void)
     lightSensor_init();
     Period_init();
     pthread_mutex_init(&history_mutex, NULL);
-    if (pthread_create(&thread, NULL, thread_function, NULL) != 0) {
+    if (pthread_create(&sampler_thread, NULL, thread_function, NULL) != 0) {
         perror("Failed to create thread\n");
         exit(EXIT_FAILURE);
     }
@@ -69,11 +69,11 @@ void Sampler_cleanup(void)
 {
     assert(is_init);
 
-    if (pthread_kill(thread, SIGUSR1) != 0) {
+    if (pthread_kill(sampler_thread, SIGUSR1) != 0) {
         perror("pthread_kill failed");
     }
     
-    if (pthread_join(thread, NULL) != 0) {
+    if (pthread_join(sampler_thread, NULL) != 0) {
         perror("pthread_join failed");
         exit(EXIT_FAILURE);
     }
@@ -107,18 +107,6 @@ void Sampler_moveCurrentDataToHistory(void)
     current_size = 0;
     history_dips = current_dips;
     current_dips = 0;
-
-    Period_statistics_t stats;
-    int flashs = RotartEncoder_currentVolume();
-    Period_getStatisticsAndClear(PERIOD_EVENT_SAMPLE_LIGHT, &stats);
-    printf("#Smpl/s = %d Flash @ %dHz avg = %.3fV dips = %d Smpl ms[ %.3f, %.3f] avg %.3f/%d\n",
-        history_size, flashs, average, history_dips, stats.minPeriodInMs, stats.maxPeriodInMs, stats.avgPeriodInMs, stats.numSamples);
-    
-    int offset = history_size / NUMBER_OF_SAMPLES_IN_OUTPUT;
-    for(int i = 0; i < NUMBER_OF_SAMPLES_IN_OUTPUT; i++){
-        printf(" %d:%.3f", i, history[i*offset]);
-    }
-    printf("\n");
 }
 
 int Sampler_getHistorySize(void)
@@ -188,9 +176,6 @@ static void * thread_function(void* arg)
     if(arg != NULL){
         perror("Arg should be something\n");
         return NULL;
-    }
-    else{
-        printf("just checking\n");
     }
 
     signal(SIGUSR1, Sampler_signal_handler);

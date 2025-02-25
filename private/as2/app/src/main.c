@@ -2,6 +2,7 @@
 #include "network.h"
 #include "RotaryEncoder.h"
 #include "Sampler.h"
+#include "output.h"
 #include <stdio.h>
 
 int main(){
@@ -11,10 +12,12 @@ int main(){
     network_init();
     RotaryEncoder_init();
     Sampler_init();
+    Output_init();
 
 
-    network_listener();
+    
     printf("Main initialization done and is now waiting for shutdown\n");
+
     
     // wait for something to call the shutdown
     shutdown_waitForShutdown();
@@ -22,6 +25,7 @@ int main(){
     printf("Main recevied shutdown\nCleaning up\n");
 
     // clean everyrthing up
+    Output_cleanup();
     Sampler_cleanup();
     RotaryEncoder_cleanup();
     network_cleanup();
