@@ -42,10 +42,7 @@ void Sampler_init(void)
     lightSensor_init();
     Period_init();
     pthread_mutex_init(&history_mutex, NULL);
-    if (pthread_create(&sampler_thread, NULL, thread_function, NULL) != 0) {
-        perror("Failed to create thread\n");
-        exit(EXIT_FAILURE);
-    }
+    
     history = (double *)malloc(buffer_size * sizeof(double));
 
     if (history == NULL) {
@@ -62,6 +59,11 @@ void Sampler_init(void)
         exit(EXIT_FAILURE);
     }
 
+    if (pthread_create(&sampler_thread, NULL, thread_function, NULL) != 0) {
+        perror("Failed to create thread\n");
+        exit(EXIT_FAILURE);
+    }
+
     is_init = true;
 }
 
@@ -69,19 +71,21 @@ void Sampler_cleanup(void)
 {
     assert(is_init);
 
-    if (pthread_kill(sampler_thread, SIGUSR1) != 0) {
-        perror("pthread_kill failed");
-    }
+    shutdown_requested = 1;
+    //printf("Sampler shutdown requested\n");
     
     if (pthread_join(sampler_thread, NULL) != 0) {
         perror("pthread_join failed");
         exit(EXIT_FAILURE);
     }
+    //printf("Sampler joined\n");
 
+    pthread_mutex_lock(&history_mutex);
     if (history != NULL) {
         free(history);
         history = NULL; // Avoid dangling pointer
     }
+    pthread_mutex_unlock(&history_mutex);
 
     if (current_data != NULL) {
         free(current_data);
@@ -156,13 +160,6 @@ int Sampler_getdips(void)
     return history_dips;
 }
 
-static void Sampler_signal_handler(int sig) {
-    if (sig == SIGUSR1) {
-        printf("Received SIGUSR1 in Sampler, shutting down...\n");
-        shutdown_requested = 1;
-    }
-}
-
 static void MyNanoSleep(double mSeconds)
 {
     struct timespec reqDelay;
@@ -177,8 +174,6 @@ static void * thread_function(void* arg)
         perror("Arg should be something\n");
         return NULL;
     }
-
-    signal(SIGUSR1, Sampler_signal_handler);
 
     struct timespec last_time, current_time;
     double sample;
@@ -215,6 +210,7 @@ static void * thread_function(void* arg)
         if(current_size + 1 > buffer_size){
             buffer_size *=2;
         
+            pthread_mutex_lock(&history_mutex);
             double *new_history = (double *)realloc(history, buffer_size * sizeof(double));
             
             double *new_current_data = (double *)realloc(current_data, buffer_size * sizeof(double));
@@ -227,6 +223,7 @@ static void * thread_function(void* arg)
             // Update the pointer and buffer size
             current_data = new_current_data;
             history = new_history;
+            pthread_mutex_unlock(&history_mutex);
         }
 
         // track current data

@@ -32,7 +32,7 @@ struct GpioLine* lines[NUMLINES] = {NULL, NULL};
 static atomic_int counter = 0;
 static atomic_bool track_CW = false;
 static atomic_bool track_CCW = false;
-static pthread_t thread;
+static pthread_t State_thread;
 
 static volatile sig_atomic_t shutdown_requested = 0;
 
@@ -137,11 +137,13 @@ void RE_StateMachine_cleanup()
 {
     assert(isInitialized);
     
-    if (pthread_kill(thread, SIGUSR2) != 0) {
+    if (pthread_kill(State_thread, SIGUSR1) != 0) {
         perror("pthread_kill failed");
+        exit(EXIT_FAILURE);
     }
+    //printf("State machine shutdown requested\n");
     
-    if (pthread_join(thread, NULL) != 0) {
+    if (pthread_join(State_thread, NULL) != 0) {
         perror("pthread_join failed");
         exit(EXIT_FAILURE);
     }
@@ -170,7 +172,7 @@ int RE_StateMachine_doState(StateMachineCallback callback)
     threadData->callback = callback;
 
     // Create thread and pass the callback
-    if (pthread_create(&thread, NULL, thread_function, (void*)threadData) != 0) {
+    if (pthread_create(&State_thread, NULL, thread_function, (void*)threadData) != 0) {
         perror("Failed to create thread\n");
         return 1;
     }
@@ -178,8 +180,8 @@ int RE_StateMachine_doState(StateMachineCallback callback)
 }
 
 static void State_signal_handler(int sig) {
-    if (sig == SIGUSR2) {
-        printf("Received SIGUSR1 in State Machine, shutting down...\n");
+    if (sig == SIGUSR1) {
+        //printf("Received SIGUSR1 in Output, shutting down...\n");
         shutdown_requested = 1;
     }
 }
@@ -197,7 +199,7 @@ static void * thread_function(void* arg)
     StateMachineCallback callback = data->callback;
     free(data);
 
-    signal(SIGUSR2, State_signal_handler);
+    signal(SIGUSR1, State_signal_handler);
 
     while (!shutdown_requested) {
         struct gpiod_line_bulk bulkEvents;
