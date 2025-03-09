@@ -1,4 +1,4 @@
-sam@DESKTOP-M9I37HJ:~/cmpt433/private/noworky$ gdb-multiarch -q noworky
+sam@DESKTOP-M9I37HJ:~/cmpt433/private/as2$ gdb-multiarch -q noworky
 Reading symbols from noworky...
 (gdb) target remote 192.168.6.2:2001
 Remote debugging using 192.168.6.2:2001
@@ -7,23 +7,16 @@ warning: File transfers from remote targets can be slow. Use "set sysroot" to ac
 Reading /lib/ld-linux-aarch64.so.1 from remote target...
 Reading symbols from target:/lib/ld-linux-aarch64.so.1...
 Reading /usr/lib/debug/.build-id/5b/b03d5dd46336e4dbc6decc67c224ca216d966b.debug from remote target...
-Reading /lib/b03d5dd46336e4dbc6decc67c224ca216d966b.debug from remote target...
-Reading /lib/.debug/b03d5dd46336e4dbc6decc67c224ca216d966b.debug from remote target...
-Reading /usr/lib/debug//lib/b03d5dd46336e4dbc6decc67c224ca216d966b.debug from remote target...
-Reading /usr/lib/debug/lib//b03d5dd46336e4dbc6decc67c224ca216d966b.debug from remote target...
-Reading target:/usr/lib/debug/lib//b03d5dd46336e4dbc6decc67c224ca216d966b.debug from remote target...
-(No debugging symbols found in target:/lib/ld-linux-aarch64.so.1)
+Reading /usr/lib/debug/.build-id/5b/b03d5dd46336e4dbc6decc67c224ca216d966b.debug from remote target...
+Reading symbols from target:/usr/lib/debug/.build-id/5b/b03d5dd46336e4dbc6decc67c224ca216d966b.debug...
 Reading /usr/lib/debug/.build-id/9f/edaa477ae4a3b43e143073860e7e7670f799fa.debug from remote target...
-0x0000fffff7fd8b40 in ?? () from target:/lib/ld-linux-aarch64.so.1
+_start () at ../sysdeps/aarch64/dl-start.S:22
+22      ../sysdeps/aarch64/dl-start.S: No such file or directory.
 (gdb) cont
 Continuing.
 Reading /lib/aarch64-linux-gnu/libc.so.6 from remote target...
 Reading /usr/lib/debug/.build-id/76/f78efc64d66285367e8d3426b6ffa3b5bc8912.debug from remote target...
-Reading /lib/aarch64-linux-gnu/f78efc64d66285367e8d3426b6ffa3b5bc8912.debug from remote target...
-Reading /lib/aarch64-linux-gnu/.debug/f78efc64d66285367e8d3426b6ffa3b5bc8912.debug from remote target...
-Reading /usr/lib/debug//lib/aarch64-linux-gnu/f78efc64d66285367e8d3426b6ffa3b5bc8912.debug from remote target...
-Reading /usr/lib/debug/lib/aarch64-linux-gnu//f78efc64d66285367e8d3426b6ffa3b5bc8912.debug from remote target...
-Reading target:/usr/lib/debug/lib/aarch64-linux-gnu//f78efc64d66285367e8d3426b6ffa3b5bc8912.debug from remote target...
+Reading /usr/lib/debug/.build-id/76/f78efc64d66285367e8d3426b6ffa3b5bc8912.debug from remote target...
 
 Program received signal SIGSEGV, Segmentation fault.
 0x0000aaaaaaaa0864 in swapContent (d1=0xaab2aaac16a8, d2=0xaab2aaac1708) at noworky.c:17
@@ -31,11 +24,29 @@ Program received signal SIGSEGV, Segmentation fault.
 (gdb) bt
 #0  0x0000aaaaaaaa0864 in swapContent (d1=0xaab2aaac16a8, d2=0xaab2aaac1708) at noworky.c:17
 #1  0x0000aaaaaaaa08e0 in tradeArrays (array1=0xaaaaaaac16b0, array2=0xaaaaaaac1710, size=10)
-    at noworky.c:29
-#2  0x0000aaaaaaaa0a54 in main () at noworky.c:72
+    at noworky.c:30
+#2  0x0000aaaaaaaa0a54 in main () at noworky.c:73
+(gdb) list
+12      /*
+13       * Swap the contents of the two pointer arguments.
+14       */
+15      void swapContent(double *d1, double *d2)
+16      {
+17              double tmp = *d2;
+18              *d2 = *d1;
+19              *d1 = tmp;
+20      }
+21
+(gdb) up
+#1  0x0000aaaaaaaa08e0 in tradeArrays (array1=0xaaaaaaac16b0, array2=0xaaaaaaac1710, size=10)
+    at noworky.c:30
+30                      swapContent(array1+i, array2+i);
+(gdb) print(i)
+$1 = 4294967295
 (gdb) quit
 A debugging session is active.
 
-        Inferior 1 [process 1157] will be killed.
+        Inferior 1 [process 2379] will be killed.
 
 Quit anyway? (y or n) y
+sam@DESKTOP-M9I37HJ:~/cmpt433/private/as2$

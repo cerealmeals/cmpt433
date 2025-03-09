@@ -24,7 +24,7 @@ void swapContent(double *d1, double *d2)
  */
 void tradeArrays(double *array1, double *array2, int size)
 {
-	int i; // because this was unsigned int and we were checking if i was lower than zero 
+	unsigned int i; // because this was unsigned int and we were checking if i was lower than zero 
 	// the loop was infinite
 	for (i = size-1; i >= 0; i--) { 
 		swapContent(array1+i, array2+i);
