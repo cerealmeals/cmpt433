@@ -41,15 +41,15 @@ static void * thread_function(void* arg);
 /*
     Define the Statemachine Data Structures
 */
-struct stateEvent {
+struct Rotation_stateEvent {
     struct state* pNextState;
     void (*action)();
 };
 struct state {
-    struct stateEvent A_rising;
-    struct stateEvent A_falling;
-    struct stateEvent B_falling;
-    struct stateEvent B_rising;
+    struct Rotation_stateEvent A_rising;
+    struct Rotation_stateEvent A_falling;
+    struct Rotation_stateEvent B_falling;
+    struct Rotation_stateEvent B_rising;
 };
 
 
@@ -227,7 +227,7 @@ static void * thread_function(void* arg)
 
             // Can check with line it is, if you have more than one...
             bool line_A = this_line_number == GPIO_LINE_NUMBER_A;
-            struct stateEvent* pStateEvent = NULL;
+            struct Rotation_stateEvent* pStateEvent = NULL;
             if (line_A)
             {
                 if (isRising) {
