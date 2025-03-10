@@ -33,6 +33,7 @@ static struct gpiod_chip* s_openGpiodChips[GPIO_NUM_CHIPS];
 
 void Gpio_initialize(void)
 {
+    assert(!s_isInitialized);
     for (int i = 0; i < GPIO_NUM_CHIPS; i++) {
          // Open GPIO chip
         s_openGpiodChips[i] = gpiod_chip_open_by_name(s_chipNames[i]);
@@ -71,6 +72,9 @@ struct GpioLine* Gpio_openForEvents(enum eGpioChips chip, int pinNumber)
         exit(EXIT_FAILURE);
     }
 
+    int direction = gpiod_line_direction(line);
+    printf("Pin %d direction: %s\n", pinNumber, direction == GPIOD_LINE_DIRECTION_INPUT ? "INPUT" : "OUTPUT");
+
     return (struct GpioLine*) line;  
 }
 
@@ -95,10 +99,20 @@ int Gpio_waitForLineChange(
     
     // Add all lines to the bulk structure
     for (int i = 0; i < numLines; i++) {
-        gpiod_line_bulk_add(&bulkWait, (struct gpiod_line*)lines[i]);
+        struct gpiod_line* next_line_to_add = (struct gpiod_line*)lines[i];
+        gpiod_line_bulk_add(&bulkWait, next_line_to_add);
     }
-    
-    gpiod_line_request_bulk_both_edges_events(&bulkWait, "Event Waiting");
+
+    for (int i = 0; i < numLines; i++) {
+        if (bulkWait.lines[i] == NULL) {
+            fprintf(stderr, "Error: GPIO line at index %d is NULL\n", i);
+            return -1;
+        }
+    }
+    if (gpiod_line_request_bulk_both_edges_events(&bulkWait, "Event Waiting") < 0) {
+        perror("Error on Request gpio.c line 113:");
+        exit(-1);
+    }
 
 
     int result = gpiod_line_event_wait_bulk(&bulkWait, NULL, bulkEvents);

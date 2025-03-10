@@ -11,6 +11,6 @@ target_include_directories(Bop_It PRIVATE
 
 # Link against the HAL library
 target_link_libraries(Bop_It PRIVATE hal_lib)
-target_link_libraries(Bop_It LINK_PRIVATE lcd)
-target_link_libraries(Bop_It LINK_PRIVATE lgpio)
+# target_link_libraries(Bop_It LINK_PRIVATE lcd)
+# target_link_libraries(Bop_It LINK_PRIVATE lgpio)
 

@@ -4,17 +4,16 @@ cmake_minimum_required(VERSION 3.18)
 project(
 Assignment3
 VERSION 1.0
-DESCRIPTION "light sensor and timing"
+DESCRIPTION "Bop_it_game"
 LANGUAGES C
 )
 
 # Find libgpiod
-# for LCD
-# find_package(PkgConfig REQUIRED)
-# pkg_check_modules(GPIOD REQUIRED libgpiod)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GPIOD REQUIRED libgpiod)
 
 # Include libgpiod headers
-# include_directories(${GPIOD_INCLUDE_DIRS})
+include_directories(${GPIOD_INCLUDE_DIRS})
 
 # Global Compiler options
 set(CMAKE_SYSTEM_NAME Linux)
@@ -29,8 +28,8 @@ add_link_options(-pthread)
 
 # Enable address sanitizer
 # (Comment this out to make your code faster)
-add_compile_options(-fsanitize=address)
-add_link_options(-fsanitize=address)
+#add_compile_options(-fsanitize=address)
+#add_link_options(-fsanitize=address)
 
 # Set output directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ~/cmpt433/public)
@@ -44,6 +43,6 @@ add_subdirectory(app)
 # add_subdirectory(lcd)
 
 # Link libgpiod to the HAL library and the main executable
-# target_link_libraries(hal_lib PRIVATE ${GPIOD_LIBRARIES})
-# target_link_libraries(Security_pet_cam PRIVATE hal_lib ${GPIOD_LIBRARIES})
+target_link_libraries(hal_lib PRIVATE ${GPIOD_LIBRARIES})
+target_link_libraries(Bop_It PRIVATE hal_lib ${GPIOD_LIBRARIES})
 
