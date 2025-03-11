@@ -32,6 +32,8 @@ pthread_mutex_t gpio_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static volatile sig_atomic_t shutdown_requested = 0;
 static pthread_t Watch_gpio_thread;
+static pthread_t *List_of_Threads_Watching = NULL;  //Array of threads
+static int Count_of_Chips;
 static void * thread_function(void* arg);
 
 

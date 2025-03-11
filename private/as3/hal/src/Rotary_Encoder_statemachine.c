@@ -31,7 +31,7 @@ void Rotary_Encoder_statemachine_init(Rotary_Encoder_callback Roation_callback, 
     assert(!is_init);
     Rotation_callback_function = Roation_callback;
     Button_callback_function = Button_callback;
-    // Watch_gpio_Add_GPIO_Line(GPIO_CHIP_A, GPIO_LINE_NUMBER_A, LineA_callback);
+    Watch_gpio_Add_GPIO_Line(GPIO_CHIP_A, GPIO_LINE_NUMBER_A, LineA_callback);
     Watch_gpio_Add_GPIO_Line(GPIO_CHIP_B, GPIO_LINE_NUMBER_B, LineB_callback);
     Watch_gpio_Add_GPIO_Line(GPIO_CHIP_button, GPIO_LINE_NUMBER_button, Button_line_callback);
     is_init = false;
@@ -166,23 +166,23 @@ struct button_state Button_states[] = {
 struct button_state* Button_CurrentState = &Button_states[0];
 struct Rotation_state* Rotation_CurrentState = &Rotatrion_states[0];
 
-// static void LineA_callback(bool isRising)
-// {
-//     struct Rotation_stateEvent* pStateEvent = NULL;
-//     if (isRising) {
-//         pStateEvent = &Rotation_CurrentState->A_rising;
-//     } else {
-//         pStateEvent = &Rotation_CurrentState->A_falling;
-//     }
+static void LineA_callback(bool isRising)
+{
+    struct Rotation_stateEvent* pStateEvent = NULL;
+    if (isRising) {
+        pStateEvent = &Rotation_CurrentState->A_rising;
+    } else {
+        pStateEvent = &Rotation_CurrentState->A_falling;
+    }
 
-//     // Do the action
-//     if (pStateEvent->action != NULL) {
-//         pStateEvent->action();
-//     }
-//     Rotation_CurrentState = pStateEvent->pNextState;
+    // Do the action
+    if (pStateEvent->action != NULL) {
+        pStateEvent->action();
+    }
+    Rotation_CurrentState = pStateEvent->pNextState;
 
-//     Rotation_callback_function(Rotation_counter);
-// }
+    Rotation_callback_function(Rotation_counter);
+}
 
 static void LineB_callback(bool isRising)
 {

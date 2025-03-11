@@ -8,10 +8,13 @@ static int volume = 10;
 static int max = 50;
 static int min = 0;
 
-void button()
+void button(int counter)
 {
+    printf("counter: %d\n", counter);
     printf("button has been clicked\n");
-    shutdown_shutdown();
+    if(counter == 3){
+        shutdown_shutdown();
+    }
 }
 
 void Rotation_handleChange(int counter)
