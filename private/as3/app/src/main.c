@@ -46,6 +46,7 @@ int main(){
     shutdown_waitForShutdown();
 
     printf("Main recevied shutdown\nCleaning up\n");
+    Rotary_Encoder_statemachine_cleanup();
     Button_statemachine_cleanup();
     Watch_gpio_cleanup();
     shutdown_cleanup();
