@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "Watch_gpio.h"
 #include "Rotary_Encoder_statemachine.h"
+#include "Button_statemachine.h"
 
 static int last_count = 0;
 static int volume = 10;
@@ -36,7 +37,8 @@ int main(){
     // initialize everything
     shutdown_init();
     
-    Rotary_Encoder_statemachine_init(Rotation_handleChange, button);
+    Rotary_Encoder_statemachine_init(Rotation_handleChange);
+    Button_statemachine_init(button);
     Watch_gpio_Start_Watching();
     
     printf("Main initialization done and is now waiting for shutdown\n");
@@ -44,7 +46,7 @@ int main(){
     shutdown_waitForShutdown();
 
     printf("Main recevied shutdown\nCleaning up\n");
-
+    Button_statemachine_cleanup();
     Watch_gpio_cleanup();
     shutdown_cleanup();
 
