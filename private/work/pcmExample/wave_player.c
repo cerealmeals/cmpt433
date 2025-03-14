@@ -44,8 +44,8 @@ int main(void)
 
 	// Play Audio
 	Audio_playFile(handle, &sampleFile);
-//	Audio_playFile(handle, &sampleFile);
-//	Audio_playFile(handle, &sampleFile);
+	Audio_playFile(handle, &sampleFile);
+	Audio_playFile(handle, &sampleFile);
 
 	// Cleanup, letting the music in buffer play out (drain), then close and free.
 	snd_pcm_drain(handle);

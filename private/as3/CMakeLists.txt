@@ -32,7 +32,7 @@ add_link_options(-pthread)
 #add_link_options(-fsanitize=address)
 
 # Set output directory
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ~/cmpt433/public)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ~/cmpt433/public/myApps)
 
 # Include subdirectories
 add_subdirectory(hal)
