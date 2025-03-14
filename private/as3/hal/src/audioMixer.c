@@ -158,7 +158,7 @@ void AudioMixer_queueSound(wavedata_t *pSound)
 	pthread_mutex_lock(&audioMutex);
 	for(int i = 0; i < MAX_SOUND_BITES; i++){
 		if(soundBites[i].pSound == NULL){
-			printf("Sound placed at index %d\n", i);
+			//printf("Sound placed at index %d\n", i);
 			soundBites[i].pSound = pSound;
 			soundBites[i].location = 0;
 			Stop_Found = true;
