@@ -10,6 +10,8 @@
 #include <unistd.h>  // For usleep()
 #include <assert.h>
 
+#define DELAY_ON_BUTTONS 500000  // 0.5 second delay
+
 static int Rotary_encoder_last_count = 0;
 static int button_count = 0;
 static bool Button_busy = false;  // Prevents multiple button triggers
@@ -25,7 +27,7 @@ static void* button_handler(void* arg)
         return NULL;
     }
 
-    usleep(500000);  // Non-blocking delay (0.5 seconds)
+    usleep(DELAY_ON_BUTTONS);
 
     printf("Button is ready for new presses.\n");
     Button_busy = false;  // Re-enable button
@@ -80,7 +82,7 @@ static void* Joystick_button_handler(void* arg)
         return NULL;
     }
 
-    usleep(500000);  // Non-blocking delay (0.5 seconds)
+    usleep(DELAY_ON_BUTTONS);
 
     printf("Button is ready for new presses.\n");
     Joystick_button_busy = false;  // Re-enable button

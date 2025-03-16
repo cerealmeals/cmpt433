@@ -3,6 +3,7 @@
 #include "audio_handler.h"
 #include <stdio.h>
 #include "JoystickInterp.h"
+#include "AccelerometerInterp.h" 
 
 int main(){
 
@@ -12,11 +13,13 @@ int main(){
     gpio_events_init();
     audio_handler_init();
     JoystickInterp_init();
+    AccelerometerInterp_init();
 
     printf("Main initialization done and is now waiting for shutdown\n");
     // wait for something to call the shutdown
     shutdown_waitForShutdown();
     
+    AccelerometerInterp_cleanup();
     JoystickInterp_cleanup();
     audio_handler_cleanup();
     gpio_events_cleanup();

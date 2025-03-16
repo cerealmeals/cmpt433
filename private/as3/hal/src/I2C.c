@@ -16,7 +16,7 @@ static bool is_init = false;
 
 int I2C_init_bus(char* bus, int address)
 {
-	assert(!is_init);
+	
 	int i2c_file_desc = open(bus, O_RDWR);
 	if (i2c_file_desc == -1) {
 		printf("I2C DRV: Unable to open bus for read/write (%s)\n", bus);

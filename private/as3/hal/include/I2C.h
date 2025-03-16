@@ -16,13 +16,13 @@ int I2C_init_bus(char* bus, int address);
 void I2C_write_reg16(int i2c_file_desc, uint8_t reg_addr, uint16_t value);
 
 // Writes a 8-bit value to a specified register address on the I2C device.
-void I2C_write_reg8(int i2c_file_desc, uint8_t reg_addr, uint8_t value)
+void I2C_write_reg8(int i2c_file_desc, uint8_t reg_addr, uint8_t value);
 
 // Reads a 16-bit value from a specified register address on the I2C device.
 uint16_t I2C_read_reg16(int i2c_file_desc, uint8_t reg_addr);
 
 // Reads a 8-bit value from a specified register address on the I2C device.
-uint16_t I2C_read_reg8(int i2c_file_desc, uint8_t reg_addr)
+uint16_t I2C_read_reg8(int i2c_file_desc, uint8_t reg_addr);
 
 // Cleans up the I2C module by resetting its initialization state.
 void I2C_cleanup(void);

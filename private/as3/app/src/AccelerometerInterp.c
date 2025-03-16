@@ -1,4 +1,5 @@
 #include "Accelerometer.h"
+#include "AccelerometerInterp.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
