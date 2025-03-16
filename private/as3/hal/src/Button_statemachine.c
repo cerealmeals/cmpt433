@@ -1,6 +1,5 @@
 #include "Button_statemachine.h"
 #include "Watch_gpio.h"
-#include "gpio.h"
 #include <stdatomic.h>
 #include <assert.h>
 #include <stdbool.h>
@@ -29,14 +28,14 @@ void Button_statemachine_cleanup()
     is_init = false;
 }
 
-struct button_stateEvent {
-    struct button_state* pNextState;
+struct Joystick_button_stateEvent {
+    struct Joystick_button_state* pNextState;
     void (*action)();
 };
 
-struct button_state {
-    struct button_stateEvent rising;
-    struct button_stateEvent falling;
+struct Joystick_button_state {
+    struct Joystick_button_stateEvent rising;
+    struct Joystick_button_stateEvent falling;
 };
 
 static void on_release(void)
@@ -44,7 +43,7 @@ static void on_release(void)
     Button_counter++;
 }
 
-struct button_state Button_states[] = {
+struct Joystick_button_state Button_states[] = {
     { // Not pressed
         .rising = {&Button_states[0], NULL},
         .falling = {&Button_states[1], NULL},
@@ -55,11 +54,11 @@ struct button_state Button_states[] = {
     },
 };
 
-struct button_state* Button_CurrentState = &Button_states[0];
+struct Joystick_button_state* Button_CurrentState = &Button_states[0];
 
 static void Button_line_callback(bool isRising)
 {
-    struct button_stateEvent* pStateEvent = isRising ? &Button_CurrentState->rising : &Button_CurrentState->falling;
+    struct Joystick_button_stateEvent* pStateEvent = isRising ? &Button_CurrentState->rising : &Button_CurrentState->falling;
     if (pStateEvent->action) {
         pStateEvent->action();
     }

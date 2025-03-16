@@ -47,6 +47,20 @@ void I2C_write_reg16(int i2c_file_desc, uint8_t reg_addr, uint16_t value)
 	}
 }
 
+void I2C_write_reg8(int i2c_file_desc, uint8_t reg_addr, uint8_t value)
+{
+	assert(is_init);
+	int tx_size = 1 + sizeof(value);
+	uint8_t buff[tx_size];
+	buff[0] = reg_addr;
+	buff[1] = value;
+	int bytes_written = write(i2c_file_desc, buff, tx_size);
+	if (bytes_written != tx_size) {
+		perror("Unable to write i2c register");
+		exit(EXIT_FAILURE);
+	}
+}
+
 uint16_t I2C_read_reg16(int i2c_file_desc, uint8_t reg_addr)
 {
 	assert(is_init);
@@ -59,6 +73,26 @@ uint16_t I2C_read_reg16(int i2c_file_desc, uint8_t reg_addr)
 
 	// Now read the value and return it
 	uint16_t value = 0;
+	int bytes_read = read(i2c_file_desc, &value, sizeof(value));
+	if (bytes_read != sizeof(value)) {
+		perror("Unable to read i2c register");
+		exit(EXIT_FAILURE);
+	}
+	return value;
+}
+
+uint16_t I2C_read_reg8(int i2c_file_desc, uint8_t reg_addr)
+{
+	assert(is_init);
+	// To read a register, must first write the address
+	int bytes_written = write(i2c_file_desc, &reg_addr, sizeof(reg_addr));
+	if (bytes_written != sizeof(reg_addr)) {
+		perror("Unable to write i2c register.");
+		exit(EXIT_FAILURE);
+	}
+
+	// Now read the value and return it
+	uint8_t value = 0;
 	int bytes_read = read(i2c_file_desc, &value, sizeof(value));
 	if (bytes_read != sizeof(value)) {
 		perror("Unable to read i2c register");

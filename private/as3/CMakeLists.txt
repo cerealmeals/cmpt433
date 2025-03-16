@@ -39,8 +39,8 @@ add_subdirectory(hal)
 add_subdirectory(app)
 
 # For LCD
-# add_subdirectory(lgpio)
-# add_subdirectory(lcd)
+#add_subdirectory(lgpio)
+#add_subdirectory(lcd)
 
 # Link libgpiod to the HAL library and the main executable
 target_link_libraries(hal_lib PRIVATE ${GPIOD_LIBRARIES})

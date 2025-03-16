@@ -64,7 +64,9 @@ void Watch_gpio_cleanup() {
 // Find or create a chip entry
 static gpio_chip_data_t *get_chip_data(enum eGpioChips chip) {
     for (int i = 0; i < chip_count; i++) {
-        if (gpio_chips[i].chip == chip) return &gpio_chips[i];
+        if (gpio_chips[i].chip == chip){
+            return &gpio_chips[i];
+        }
     }
 
     // Expand chip list if needed
