@@ -22,3 +22,8 @@ COMMAND "${CMAKE_COMMAND}" -E copy_directory
 "${CMAKE_SOURCE_DIR}/wave-files"
 "~/cmpt433/public/myApps/wave-files"
 COMMENT "Copying WAVE files to public NFS directory")
+add_custom_command(TARGET Bop_It POST_BUILD
+COMMAND "${CMAKE_COMMAND}" -E copy_directory
+"${CMAKE_SOURCE_DIR}/server"
+"~/cmpt433/public/myApps/server-copy"
+COMMENT "Copying Sever files to public NFS directory")

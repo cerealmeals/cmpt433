@@ -2,3 +2,4 @@ build/
 .vscode
 private/as1-capture.txt
 private/as1-reaction_timer.tar.gz
+public/

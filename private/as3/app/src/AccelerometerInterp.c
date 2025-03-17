@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <pthread.h>
+#include "periodTimer.h"
 
 #define POLL_DELAY_US 500000  // 0.5s delay
 
@@ -48,7 +49,7 @@ static void* AccelerometerInterp_threadFunc(void* arg) {
 
     while (running) {
         Accelerometer_GetTapState(&output);
-
+        Period_markEvent(PERIOD_EVENT_ACCELEROMETER);
         if (output.x_tap) {
             printf("X-axis tap detected!\n");
             // Perform action for X-axis tap

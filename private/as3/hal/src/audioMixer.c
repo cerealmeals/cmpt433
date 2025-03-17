@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <limits.h>
 #include <alloca.h> // needed for mixer
+#include "periodTimer.h"
 
 
 static snd_pcm_t *handle;
@@ -222,7 +223,6 @@ void AudioMixer_setVolume(int newVolume)
 		return;
 	}
 	volume = newVolume;
-	printf("Volume: %d\n", volume);
     long min, max;
     snd_mixer_t *mixerHandle;
     snd_mixer_selem_id_t *sid;
@@ -309,6 +309,7 @@ void* playbackThread(void* _arg)
 
 	while (!stopping) {
 		// Generate next block of audio
+		Period_markEvent(PERIOD_EVENT_AUDIO);
 		fillPlaybackBuffer(playbackBuffer, playbackBufferSize);
 		
 		// Output the audio

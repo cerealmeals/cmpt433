@@ -4,13 +4,15 @@
 #include "Button_statemachine.h"
 #include "shutdown.h"
 #include "audio_handler.h"
+#include "output.h"
 #include "JoystickButton.h"
 #include <stdio.h>
 #include <pthread.h>
 #include <unistd.h>  // For usleep()
 #include <assert.h>
 
-#define DELAY_ON_BUTTONS 500000  // 0.5 second delay
+#define DELAY_ON_BUTTON 500000  // 0.5 second delay
+#define DELAY_ON_JOYSTICK_BUTTON 1500000
 
 static int Rotary_encoder_last_count = 0;
 static int button_count = 0;
@@ -27,9 +29,9 @@ static void* button_handler(void* arg)
         return NULL;
     }
 
-    usleep(DELAY_ON_BUTTONS);
+    usleep(DELAY_ON_BUTTON);
 
-    printf("Button is ready for new presses.\n");
+    //printf("Button is ready for new presses.\n");
     Button_busy = false;  // Re-enable button
     return NULL;
 }
@@ -37,16 +39,16 @@ static void* button_handler(void* arg)
 
 void button(int counter)
 {
-    static int last_counter = -1;
+    static int last_counter = 0;
     if (counter == last_counter){
-        printf("same as last time button\n");
+        //printf("same as last time button\n");
         return;
     }
     else{
         last_counter = counter;
     }
     if (Button_busy) {
-        printf("Button is busy, ignoring new press.\n");
+        //printf("Button is busy, ignoring new press.\n");
         return;
     }
 
@@ -54,9 +56,9 @@ void button(int counter)
     button_count++;
     audio_handler_cycleBeatMode();
     pthread_t thread;
-    printf("Button pressed, counter: %d\n",button_count);
+    //printf("Button pressed, counter: %d\n",button_count);
     if(button_count == 3){
-        printf("Check?\n");
+        //printf("Check?\n");
         shutdown_shutdown();
     }
 
@@ -82,25 +84,26 @@ static void* Joystick_button_handler(void* arg)
         return NULL;
     }
 
-    usleep(DELAY_ON_BUTTONS);
+    usleep(DELAY_ON_JOYSTICK_BUTTON);
 
-    printf("Button is ready for new presses.\n");
+    //printf("Button is ready for new presses.\n");
     Joystick_button_busy = false;  // Re-enable button
     return NULL;
 }
 
 static void joystick_button_callback(int counter) {
-    static int last_counter = -1;
+    static int last_counter = 0;
     if (counter == last_counter){
-        printf("same as last time button\n");
+        //printf("same as last time button\n");
         return;
     }
     else{
         last_counter = counter;
-        printf("LCD stuff\n");
+        Output_cycle_LCD_mode();
+        //printf("LCD stuff\n");
     }
     if (Joystick_button_busy) {
-        printf("Button is busy, ignoring new press.\n");
+        //printf("Button is busy, ignoring new press.\n");
         return;
     }
     Joystick_button_busy = true;  // Mark as busy
