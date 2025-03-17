@@ -32,6 +32,7 @@ void audio_handler_adjustBPM(bool increase);
 int audio_handler_getVolume();
 void audio_handler_setVolume(int new_volume);
 void audio_handler_adjustVolume(bool increase);
+void audio_handler_playSound(DrumSound sound);
 
 
 #endif // AUDIO_HANDLER_H

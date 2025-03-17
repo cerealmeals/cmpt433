@@ -4,13 +4,13 @@
 #ifndef ACCELEROMETER_H
 #define ACCELEROMETER_H
 
-#include <stdbool.h>
+#include <stdint.h>
 
 // AccelerometerOutput stores the tap detection states along the X, Y, and Z axes.
 typedef struct {
-    bool x_tap;
-    bool y_tap;
-    bool z_tap;
+    int16_t x;
+    int16_t y;
+    int16_t z;
 } AccelerometerOutput;
 
 /**
