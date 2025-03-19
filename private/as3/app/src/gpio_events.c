@@ -37,7 +37,7 @@ static void* button_handler(void* arg)
 }
 
 
-void button(int counter)
+static void button(int counter)
 {
     static int last_counter = 0;
     if (counter == last_counter){

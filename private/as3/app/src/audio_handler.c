@@ -183,6 +183,9 @@ void audio_handler_playSound(DrumSound sound)
     if (sound >= 0 && sound < NUMBER_OF_SOUNDS) {
         AudioMixer_queueSound(&sound_data[sound]);
     }
+    else{
+        printf("The number %d is not a sound\n", sound);
+    }
 }
 
 static void* drum_beat_loop(void* arg)

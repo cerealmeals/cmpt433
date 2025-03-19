@@ -6,6 +6,7 @@
 #include "AccelerometerInterp.h" 
 #include "output.h"
 #include "periodTimer.h"
+#include "network.h"
 
 int main(){
 
@@ -17,11 +18,13 @@ int main(){
     JoystickInterp_init();
     AccelerometerInterp_init();
     Output_init();
+    network_init();
 
     printf("Main initialization done and is now waiting for shutdown\n");
     // wait for something to call the shutdown
     shutdown_waitForShutdown();
     
+    network_cleanup();
     Output_cleanup();
     AccelerometerInterp_cleanup();
     JoystickInterp_cleanup();

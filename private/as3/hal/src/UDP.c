@@ -1,6 +1,4 @@
-#include "network.h"
-#include "shutdown.h"
-#include "Sampler.h"
+#include "UDP.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <netdb.h>
@@ -9,6 +7,7 @@
 #include <pthread.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <signal.h>
 #define MSG_MAX_LEN 1024
 #define PORT        12345
 
@@ -26,7 +25,7 @@ static bool running = false;
 
 static network_callback_t network_callback = NULL;
 
-void network_init(network_callback_t callback)
+void UDP_init(network_callback_t callback)
 {
 	assert(!is_init);
 	printf("Connect using: \n");
@@ -58,11 +57,11 @@ void network_init(network_callback_t callback)
 }
 
 
-void network_cleanup(void)
+void UDP_cleanup(void)
 {
     assert(is_init == true);
 
-    running = false;
+    pthread_kill(netword_thread, SIGUSR2);
     // make sure the thread ended
     pthread_join(netword_thread, NULL);
 	
@@ -71,12 +70,19 @@ void network_cleanup(void)
     is_init = false;
 }
 
+static void UDP_signal_handler(int sig) {
+    if (sig == SIGUSR2) {
+        //printf("Received SIGUSR1 in Output, shutting down...\n");
+        running = false;
+    }
+}
+
 static void * thread_function(void* arg)
 {
     if (arg != NULL){
         return NULL;
     }
-	char previousMessage[MSG_MAX_LEN] = {"\0"};
+	signal(SIGUSR2, UDP_signal_handler);
     while (running) {
 		// Get the data (blocking)
 		// Will change sin (the address) to be the address of the client.

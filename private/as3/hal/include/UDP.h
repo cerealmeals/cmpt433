@@ -9,12 +9,12 @@
 #define MSG_MAX_LEN 1024
 
 // Callback function type: Takes received message, fills response message
-typedef void (*network_callback_t)(const char* received, char* response, size_t max_response_len);
+typedef void (*network_callback_t)(char* received, char* response, int max_response_len);
 
 // Initializes the UDP server, binds it to a specified port, and starts a background thread to handle incoming messages.
-void network_init(network_callback_t callback);
+void UDP_init(network_callback_t callback);
 
 // Cleans up resources, joins the background thread, and closes the socket.
-void network_cleanup(void);
+void UDP_cleanup(void);
 
 #endif
