@@ -103,6 +103,12 @@ void AudioMixer_readWaveFileIntoMemory(char *fileName, wavedata_t *pSound)
 	assert(is_init);
 	assert(pSound);
 
+	// Free existing data if it was already allocated
+    if (pSound->pData != NULL) {
+        free(pSound->pData);
+        pSound->pData = NULL;
+    }
+
 	// The PCM data in a wave file starts after the header:
 	const int PCM_DATA_OFFSET = 44;
 
@@ -136,6 +142,8 @@ void AudioMixer_readWaveFileIntoMemory(char *fileName, wavedata_t *pSound)
 				pSound->numSamples, fileName, samplesRead);
 		exit(EXIT_FAILURE);
 	}
+
+	fclose(file);
 }
 
 void AudioMixer_freeWaveFileData(wavedata_t *pSound)
@@ -195,6 +203,8 @@ void AudioMixer_cleanup(void)
 	//  in addition to this by calling AudioMixer_freeWaveFileData() on that struct.)
 	free(playbackBuffer);
 	playbackBuffer = NULL;
+	
+    snd_config_update_free_global();
 
 	printf("Done stopping audio...\n");
 	fflush(stdout);

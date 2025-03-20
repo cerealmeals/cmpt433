@@ -10,10 +10,10 @@ $(document).ready(function() {
 	setupServerMessageHandlers(socket);
 	
 	// Setup a repeating function (every 1s)
-	window.setInterval(function() {sendCommandToServer('read-uptime')}, 1000);
-	window.setInterval(function() {sendCommandToServer('volume')}, 1000);
-	window.setInterval(function() {sendCommandToServer('mode')}, 1000);
-	window.setInterval(function() {sendCommandToServer('tempo')}, 1000);
+	// window.setInterval(function() {sendCommandToServer('read-uptime')}, 10000);
+	// window.setInterval(function() {sendCommandToServer('volume')}, 10000);
+	// window.setInterval(function() {sendCommandToServer('mode')}, 10000);
+	// window.setInterval(function() {sendCommandToServer('tempo')}, 10000);
 	
 	// Start off by "polling" the volume, mode, and tempo:
 	sendCommandToServer('volume');

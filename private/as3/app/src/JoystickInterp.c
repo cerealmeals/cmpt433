@@ -8,7 +8,7 @@
 #include "JoystickInterp.h"
 #include <pthread.h>
 
-#define POLL_DELAY_US 500000  // 0.5 delay
+#define POLL_DELAY_US 200000  // 0.2 delay
 #define VOLUME_THRESHOLD 200 // Threshold for detecting up/down movement
 
 static void* JoystickInterp_threadFunc(void* arg);

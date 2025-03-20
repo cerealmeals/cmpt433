@@ -62,6 +62,10 @@ void UDP_cleanup(void)
     assert(is_init == true);
 
     pthread_kill(netword_thread, SIGUSR2);
+
+	// Interrupt recvfrom
+    shutdown(socketDescriptor, SHUT_RD);
+	
     // make sure the thread ended
     pthread_join(netword_thread, NULL);
 	
@@ -72,7 +76,7 @@ void UDP_cleanup(void)
 
 static void UDP_signal_handler(int sig) {
     if (sig == SIGUSR2) {
-        //printf("Received SIGUSR1 in Output, shutting down...\n");
+        printf("Received SIGUSR2 in UPD, shutting down...\n");
         running = false;
     }
 }

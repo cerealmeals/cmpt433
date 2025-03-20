@@ -50,10 +50,10 @@ void network_cleanup(void)
 static void callback_function(char* message, char* response, int size_of_response)
 {
     response[0] = '\0'; // Default empty response
-    
+
     char *cmd = strtok(message, " "); // Get command
     char *arg = strtok(NULL, " ");    // Get argument (if any)
-    
+
     if (cmd == NULL) {
         snprintf(response, size_of_response, "ERROR: Empty command");
         return;
@@ -71,35 +71,35 @@ static void callback_function(char* message, char* response, int size_of_respons
 
 static void mode_function(char* message, char* response, int size_of_response)
 {
-    if (!message) {
-        snprintf(response, size_of_response, "ERROR: No mode specified");
+    if (strncmp(message, "null", strlen("null")) == 0) {  
+        snprintf(response, size_of_response, "%d", audio_handler_getBeatMode());
         return;
     }
     int mode = atoi(message);
     audio_handler_startBeat(mode);
-    snprintf(response, size_of_response, "Mode set to %d", mode);
+    snprintf(response, size_of_response, "%d", mode);
 }
 
 static void volume_function(char* message, char* response, int size_of_response)
 {
-    if (!message) {
-        snprintf(response, size_of_response, "ERROR: No volume specified");
+    if (strncmp(message, "null", strlen("null")) == 0) {
+        snprintf(response, size_of_response, "%d", audio_handler_getVolume());
         return;
     }
     int volume = atoi(message);
     audio_handler_setVolume(volume);
-    snprintf(response, size_of_response, "Volume set to %d", volume);
+    snprintf(response, size_of_response, "%d", volume);
 }
 
 static void tempo_function(char* message, char* response, int size_of_response)
 {
-    if (!message) {
-        snprintf(response, size_of_response, "ERROR: No tempo specified");
+    if (strncmp(message, "null", strlen("null")) == 0) {
+        snprintf(response, size_of_response, "%d", audio_handler_getBPM());
         return;
     }
     int tempo = atoi(message);
     audio_handler_setBPM(tempo);
-    snprintf(response, size_of_response, "Tempo set to %d BPM", tempo);
+    snprintf(response, size_of_response, "%d", tempo);
 }
 
 static void play_sound_function(char* message, char* response, int size_of_response)

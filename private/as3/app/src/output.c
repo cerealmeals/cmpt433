@@ -54,7 +54,7 @@ static void * thread_function(void* arg);
 // **Screen 1: Status Screen**
 char* get_status_screen() {
     snprintf(screen_buffer, sizeof(screen_buffer), 
-             "Beat: %s\n \n \n \n \n%d        %d", current_beat[beat_mode], volume, bpm);
+             "Beat: %s\n \n \n \n \n%-4d%9d", current_beat[beat_mode], volume, bpm);
     return screen_buffer;
 }
 
@@ -96,7 +96,7 @@ void Output_init(void)
 void Output_cleanup(void)
 {
     assert(is_init);
-    LCD_cleanup();
+    
     shutdown_requested = 1;
     //printf("output shutdown requested\n");
     
@@ -104,7 +104,7 @@ void Output_cleanup(void)
         perror("pthread_join failed");
         exit(EXIT_FAILURE);
     }
-    
+    LCD_cleanup();
     is_init = false;
 }
 
