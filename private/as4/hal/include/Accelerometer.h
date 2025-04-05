@@ -37,6 +37,6 @@ void Accelerometer_cleanup();
  * 
  * @param output A pointer to an `AccelerometerOutput` struct where the results will be stored.
  */
-void Accelerometer_GetaccelerationState(AccelerometerOutput* output);
+void Accelerometer_GetAccelerationState(AccelerometerOutput* output);
 
 #endif

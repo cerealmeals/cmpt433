@@ -100,7 +100,7 @@ static int16_t formatted_output(uint8_t high_register, uint8_t low_register)
     int16_t shifted = ((upper | lower) >> 2);
     return shifted * GRAVITY_SCALE;
 }
-void Accelerometer_GetTapState(AccelerometerOutput* output)
+void Accelerometer_GetAccelerationState(AccelerometerOutput* output)
 {
     assert(is_init);
     int16_t minus_z = Z_AXES_SCALE;

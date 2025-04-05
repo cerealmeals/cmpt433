@@ -1,37 +1,57 @@
 #include <stdio.h>
-#include "NeopixelApp.h"
-#include <unistd.h>  // for usleep
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include "Accelerometer.h"
 
 int main(void)
 {
-    printf("=== NeoPixelApp Demo ===\n");
+    printf("=== Accelerometer Test Application ===\n");
 
-    NeopixelApp_Init();
+    // 1) Initialize the accelerometer (e.g., set up I2C bus, configure registers)
+    Accelerometer_init();
 
-    // // 1) Set all to red (example: 0x000F0000)
-    // uint32_t allRed[8];
-    // for (int i = 0; i < 8; i++) {
-    //     allRed[i] = Red;
-    // }
-    // NeopixelApp_SetAll(allRed);
+    // 2) Interactively prompt the user
+    while (1) {
+        // Ask user for a command
+        printf("\nType '3' to get accelerometer data, or 'exit' to quit.\n> ");
 
-    // // 2) Wait 1 second
-    // sleep(1);
+        char input[64];
+        if (!fgets(input, sizeof(input), stdin)) {
+            // EOF or read error => quit
+            break;
+        }
 
-    // // 3) Single LED to green at position 4
-    // NeopixelApp_SetOne(Green, 4); // green in your color ordering
+        // Strip trailing newline
+        char *newline = strchr(input, '\n');
+        if (newline) {
+            *newline = '\0';
+        }
 
-    // // 4) Wait 1 second
-    // usleep(1000000);
+        // Convert to lowercase for simpler comparison
+        for (char *p = input; *p; p++) {
+            *p = (char)tolower((unsigned char)*p);
+        }
 
-    // 5) Animate blue chase
-    //NeopixelApp_HitAnimation();
+        if (strcmp(input, "exit") == 0) {
+            // User wants to quit
+            break;
+        } else if (strcmp(input, "3") == 0) {
+            // 3) Read the current accelerometer state
+            AccelerometerOutput accelData;
+            Accelerometer_GetAccelerationState(&accelData);
+            printf("Accelerometer Reading:\n");
+            printf("  X = %d\n", accelData.x);
+            printf("  Y = %d\n", accelData.y);
+            printf("  Z = %d\n", accelData.z);
+        } else {
+            printf("Unrecognized command: '%s'\n", input);
+        }
+    }
 
-    usleep(1000000);
+    // 4) Cleanup
+    Accelerometer_cleanup();
 
-    // 6) Animate red chase
-    NeopixelApp_MissAnimation();
-
-    NeopixelApp_Cleanup();
+    printf("Exiting Accelerometer Test Application.\n");
     return 0;
 }
