@@ -22,10 +22,10 @@ cd ..
 echo "Copying to NFS..."
 mkdir -p ~/cmpt433/public/r5/
 cp build/zephyr/zephyr.elf ~/cmpt433/public/r5/zephyr_mcu_neopixel.elf
-cp ./load_r5_mcu.sh ~/cmpt433/public/r5/
-chmod +x ~/cmpt433/public/r5/load_r5_mcu.sh
+cp ./neo_load_r5_mcu.sh ~/cmpt433/public/r5/
+chmod +x ~/cmpt433/public/r5/neo_load_r5_mcu.sh
 echo "--> Done building Zephyr firmware! <--"
 echo ""
 echo "To install on target:"
 echo "   1. SSH to target and mount NFS"
-echo "   2. Run /mnt/remote/r5/load_r5_mcu.sh"
+echo "   2. Run /mnt/remote/r5/neo_load_r5_mcu.sh"

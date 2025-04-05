@@ -32,7 +32,7 @@ add_compile_options(-fsanitize=address)
 add_link_options(-fsanitize=address)
 
 # Set output directory
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ~/cmpt433/public)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ~/cmpt433/public/myApps)
 
 # Include subdirectories
 add_subdirectory(hal)
@@ -42,5 +42,5 @@ add_subdirectory(lcd)
 
 # Link libgpiod to the HAL library and the main executable
 target_link_libraries(hal_lib PRIVATE ${GPIOD_LIBRARIES})
-target_link_libraries(light_sampler PRIVATE hal_lib ${GPIOD_LIBRARIES})
+target_link_libraries(finddot PRIVATE hal_lib ${GPIOD_LIBRARIES})
 

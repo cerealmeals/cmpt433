@@ -8,6 +8,7 @@
     aliases {
         led0 = &mcu_led;
         btn0 = &mcu_btn;
+        neopixel = &mcu_neopixel;
     };
 
     leds {
@@ -26,6 +27,13 @@
             // SoC pin C8 - Mode 7:MCU_GPIO0_10 - Address 0x04084028
             gpios = <&mcu_gpio0 10 GPIO_ACTIVE_HIGH>;
         };
+
+        mcu_neopixel: btn_gpio23 {
+            // GPIO23
+            // Zen Hat maps to NeoPixel Data Out
+            // SoC pin B5 - Mode 7:MCU_GPIO0_7 - Address 0x0408401C
+            gpios = <&mcu_gpio0 7 GPIO_ACTIVE_HIGH>;
+        };
     };
 
     // ADDED, but does not work.
@@ -43,10 +51,12 @@
     // Had to execute 
     //      gpioset gpiochip0 9=1
     //      gpioget gpiochip0 10
+    //      gpioset gpiochip0 7=1
     // on clean boot to make it flash the LED and read the pin.
     mcu_gpio0_led_btn_default: mcu_gpio0_led_btn_default {
         pinmux = <K3_PINMUX(0x0024, PIN_OUTPUT, MUX_MODE_7)>; /* (B3) GPIO7*/
-        pinmux = <K3_PINMUX(0x0028, PIN_INPUT, MUX_MODE_7)>; /* (C8) GPIO24*/
+        pinmux = <K3_PINMUX(0x0028, PIN_INPUT,  MUX_MODE_7)>; /* (C8) GPIO24*/
+        pinmux = <K3_PINMUX(0x001C, PIN_OUTPUT, MUX_MODE_7)>; /* (B5) GPIO23*/
     };
 };
 
