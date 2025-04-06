@@ -28,8 +28,8 @@ add_link_options(-pthread)
 
 # Enable address sanitizer
 # (Comment this out to make your code faster)
-add_compile_options(-fsanitize=address)
-add_link_options(-fsanitize=address)
+#add_compile_options(-fsanitize=address)
+#add_link_options(-fsanitize=address)
 
 # Set output directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ~/cmpt433/public/myApps)

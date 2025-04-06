@@ -12,10 +12,12 @@
 #include "Accelerometer.h" // Accelerometer_init/cleanup + GetaccelerationState
 #include "NeopixelApp.h"   // NeopixelApp_Init/Cleanup, SetAll, etc.
 
+#include <assert.h>
+
 #define NEO_NUM_LEDS    8
 #define LOOP_DELAY_US   10000   // ~100 updates/second
-#define THRESHOLD       100
-
+#define THRESHOLD_IN    100
+#define THRESHOLD_OUT   120
 // ---------------------------------------------------------
 // Globals for the background thread
 // ---------------------------------------------------------
@@ -33,27 +35,31 @@ static atomic_bool onTarget = false;
 
 static atomic_bool ControlNeoPixel = true;
 
-// ---------------------------------------------------------
-// Helper: clamp LED index to [0..(NEO_NUM_LEDS-1)]
-// ---------------------------------------------------------
-static int clampLedIndex(int idx)
-{
-    if (idx < 0) return 0;
-    if (idx >= NEO_NUM_LEDS) return NEO_NUM_LEDS - 1;
-    return idx;
-}
+static bool is_init = false;
 
-// ---------------------------------------------------------
-// Helper: map difference from 0..1000 => 0..(NEO_NUM_LEDS-1)
-// ---------------------------------------------------------
-static int mapDifferenceToLedIndex(int diff)
+// A helper function to apply hysteresis to one axis
+//   - diff: The difference (e.g. x - targetX)
+//   - prevWithin: Did we used to be “in”?
+// Returns whether we are now “in”
+static bool applyHysteresis(int diff, bool prevWithin)
 {
-    if (diff < 0) diff = -diff;  // absolute
-    if (diff > 1000) diff = 1000; 
+    int magnitude = abs(diff);
 
-    // scale 0..1000 => 0..7
-    int scaled = (diff * (NEO_NUM_LEDS - 1)) / 1000; 
-    return clampLedIndex(scaled);
+    if (prevWithin) {
+        // We were previously in => only exit if we exceed THRESHOLD_OUT
+        if (magnitude > THRESHOLD_OUT) {
+            return false; // now out
+        } else {
+            return true;  // stay in
+        }
+    } else {
+        // We were previously out => only enter if we are below THRESHOLD_IN
+        if (magnitude < THRESHOLD_IN) {
+            return true; // now in
+        } else {
+            return false; // stay out
+        }
+    }
 }
 
 // ---------------------------------------------------------
@@ -68,18 +74,33 @@ static void* trackingThreadFunc(void* arg)
     (void)arg;
 
     uint32_t ledColors[NEO_NUM_LEDS];
+    
+    int N500 = -500;
+    int N400 = -400;
+    int N300 = -300;
+    int N200 = -200; 
+    int N100 = -100; 
+    int P200 = 200;
+    int P300 = 300;
+    int P400 = 400;
+    int P500 = 500;
+
+
+
+    // This indicates whether X and Y were previously considered "within range"
+    bool prevWithinX = false;
+    bool prevWithinY = false;
 
     while (!Accelerometer_threadShouldExit) {
-
-         // 0) Check if we want to skip controlling the NeoPixel for this iteration
+        // 0) Check if we want to skip controlling the NeoPixel for this iteration
         if (!ControlNeoPixel) {
-            // If set, skip the rest of the loop body
+            usleep(LOOP_DELAY_US);
             continue;
         }
 
         // 1) Read the accelerometer
         AccelerometerOutput accel;
-        Accelerometer_GetaccelerationState(&accel);
+        Accelerometer_GetAccelerationState(&accel);
         int16_t x = accel.x;
         int16_t y = accel.y;
 
@@ -89,19 +110,23 @@ static void* trackingThreadFunc(void* arg)
         int16_t targetYLocal = targetY;
         pthread_mutex_unlock(&targetMutex);
 
-        // 3) Compare
+        // 3) Compare with hysteresis
         int diffX = x - targetXLocal;
         int diffY = y - targetYLocal;
-        bool withinX = (abs(diffX) < THRESHOLD);
-        bool withinY = (abs(diffY) < THRESHOLD);
+
+        bool newWithinX = applyHysteresis(diffX, prevWithinX);
+        bool newWithinY = applyHysteresis(diffY, prevWithinY);
+
+        prevWithinX = newWithinX;
+        prevWithinY = newWithinY;
 
         // We'll build a new color pattern each loop
         memset(ledColors, 0, sizeof(ledColors));
 
-        // On target => all blue
-        if (withinX && withinY) {
-            
+        // If both are within => onTarget => all blue
+        if (newWithinX && newWithinY) {
             onTarget = true;
+
             for (int i = 0; i < NEO_NUM_LEDS; i++) {
                 ledColors[i] = Blue;
             }
@@ -109,69 +134,92 @@ static void* trackingThreadFunc(void* arg)
             usleep(LOOP_DELAY_US);
             continue;
         }
-        onTarget = false;
-        // Not on target get colour and which lights to turn on
-        uint32_t colour = 0;
-        uint32_t lightcolour = 0;
 
-        if(withinY){
+        // Not on target
+        onTarget = false;
+
+        // Color logic based on Y
+        uint32_t colour, lightcolour;
+        if (newWithinY) {
+            // If Y is "within" threshold => use Blue
             colour = Blue;
             lightcolour = LightBlue;
-        }
-        else if (diffY > 0){
+        } else if (diffY > 0) {
+            // Y is bigger => green
+            colour = Green;
+            lightcolour = LightGreen;
+        } else {
+            // Y is smaller => red
             colour = Red;
             lightcolour = LightRed;
         }
-        else{
-            colour = Green;
-            lightcolour = LightGreen;
-        }
 
-        if(withinX){ // meaning diffx is [-99...99]
+        // If X is “within” => fill entire strip with colour
+        if (newWithinX) {
             for (int i = 0; i < NEO_NUM_LEDS; i++) {
                 ledColors[i] = colour;
             }
         }
+        else {
+            // Negative side
+            if (diffX <= N500) {
+                ledColors[0] = lightcolour;
+                N500 = -480;
+            } else if (diffX <= N400) {
+                ledColors[0] = colour;
+                ledColors[1] = lightcolour;
+                N500 = -500;
+                N400 = -380;
+            } else if (diffX <= N300) {
+                ledColors[0] = lightcolour;
+                ledColors[1] = colour;
+                ledColors[2] = lightcolour;
+                N400 = -400;
+                N300 = -280;
+            } else if (diffX <= N200) {
+                ledColors[1] = lightcolour;
+                ledColors[2] = colour;
+                ledColors[3] = lightcolour;
+                N300 = -300;
+                N200 = -180;
+            } else if (diffX <= N100) {
+                ledColors[2] = lightcolour;
+                ledColors[3] = colour;
+                ledColors[4] = lightcolour;
+                N200 = -200;
+                N100 = -80;
+            }
 
-        // 2) Negative side
-        else if (diffX <= -500) {
-            ledColors[7] = lightcolour;
-        } else if (diffX <= -400) {
-            ledColors[7] = colour;
-            ledColors[6] = lightcolour;
-        } else if (diffX <= -300) {
-            ledColors[7] = lightcolour;
-            ledColors[6] = colour;
-            ledColors[5] = lightcolour;
-        } else if (diffX <= -200) {
-            ledColors[6] = lightcolour;
-            ledColors[5] = colour;
-            ledColors[4] = lightcolour;
-        } else if (diffX <= -100) {
-            ledColors[5] = lightcolour;
-            ledColors[4] = colour;
-            ledColors[3] = lightcolour;
+            // Positive side
+            else if (diffX <= P200) {
+                ledColors[3] = lightcolour;
+                ledColors[4] = colour;
+                ledColors[5] = lightcolour;
+                P200 = 220;
+            } else if (diffX <= P300) {
+                ledColors[4] = lightcolour;
+                ledColors[5] = colour;
+                ledColors[6] = lightcolour;
+                P200 = 200;
+                P300 = 320;
+            } else if (diffX <= P400) {
+                ledColors[5] = lightcolour;
+                ledColors[6] = colour;
+                ledColors[7] = lightcolour;
+                P300 = 300;
+                P400 = 420;
+            } else if (diffX <= P500) {
+                ledColors[6] = lightcolour;
+                ledColors[7] = colour;
+                P400 = 400;
+                P500 = 520;
+            } else{
+                ledColors[7] = lightcolour;
+                P500 = 500;
+            }
         }
-
-        // 3) Positive side
-        else if (diffX < 200) {          // i.e. 100..199
-            ledColors[4] = lightcolour;
-            ledColors[3] = colour;
-            ledColors[2] = lightcolour;
-        } else if (diffX < 300) {   // 200..299
-            ledColors[3] = lightcolour;
-            ledColors[2] = colour;
-            ledColors[1] = lightcolour;
-        } else if (diffX < 400) {   // 300..399
-            ledColors[2] = lightcolour;
-            ledColors[1] = colour;
-            ledColors[0] = lightcolour;
-        } else if (diffX < 500) {   // 400..499
-            ledColors[1] = lightcolour;
-            ledColors[0] = colour;
-        } else if (diffX < 600) {   // 500..599
-            ledColors[0] = lightcolour;
-        }
+ 
+        // Commit
         NeopixelApp_SetAll(ledColors);
         usleep(LOOP_DELAY_US);
     }
@@ -184,53 +232,44 @@ static void* trackingThreadFunc(void* arg)
 // ---------------------------------------------------------
 void AccelerometerApp_init(void)
 {
+    assert(!is_init);
     // 1) Initialize accelerometer
     Accelerometer_init();
 
-    // 2) Initialize NeoPixel
-    NeopixelApp_Init();
-
-    // 3) Default target to zero
+    // 2) Default target to zero
     pthread_mutex_lock(&targetMutex);
     targetX = 0;
     targetY = 0;
     pthread_mutex_unlock(&targetMutex);
 
-    // 4) Clear onTarget
-    atomic_store_explicit(&onTarget, false, memory_order_relaxed);
+    // 3) Clear onTarget
+    onTarget = false;
 
-    // Optionally turn off all LEDs
-    uint32_t off[NEO_NUM_LEDS];
-    memset(off, 0, sizeof(off));
-    NeopixelApp_SetAll(off);
-
-    // 5) Start the thread
+    // 4) Start the thread
     Accelerometer_threadShouldExit = false;
     if (pthread_create(&Accelerometer_thread, NULL, trackingThreadFunc, NULL) != 0) {
         perror("ERROR: Could not create tracking thread");
         exit(EXIT_FAILURE);
     }
+    is_init = true;
 }
 
 void AccelerometerApp_cleanup(void)
 {
+    assert(is_init);
     // Signal the thread to exit
     Accelerometer_threadShouldExit = true;
     // Wait for it
     pthread_join(Accelerometer_thread, NULL);
 
-    // Turn off all LEDs
-    uint32_t off[NEO_NUM_LEDS];
-    memset(off, 0, sizeof(off));
-    NeopixelApp_SetAll(off);
-
     // Cleanup
     Accelerometer_cleanup();
-    NeopixelApp_Cleanup();
+    is_init = false;
 }
 
 void AccelerometerApp_SetTarget(int16_t newTargetX, int16_t newTargetY)
 {
+    assert(is_init);
     pthread_mutex_lock(&targetMutex);
     targetX = newTargetX;
     targetY = newTargetY;
@@ -241,11 +280,13 @@ void AccelerometerApp_SetTarget(int16_t newTargetX, int16_t newTargetY)
 
 bool AccelerometerApp_IsOnTarget(void)
 {
+    assert(is_init);
     // Just load the atomic boolean
     return onTarget;
 }
 
 void AccelerometerApp_SetControlNeoPixel(bool enable)
 {
+    assert(is_init);
     ControlNeoPixel = enable;
 }
